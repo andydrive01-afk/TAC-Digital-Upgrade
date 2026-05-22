@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "TAC Telecom"
+version = "1.0.0"
+id = "artifacts/tac-telecom"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19369
+
+[services.development]
+run = "pnpm --filter @workspace/tac-telecom run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/tac-telecom", "run", "build" ]
+publicDir = "artifacts/tac-telecom/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19369"
+BASE_PATH = "/"
