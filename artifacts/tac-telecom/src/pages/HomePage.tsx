@@ -34,6 +34,7 @@ const CITIES = [
 
 export default function HomePage() {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [planTab, setPlanTab] = useState<"fibra" | "tv">("fibra");
   const [coverageSubmitted, setCoverageSubmitted] = useState(false);
 
   const handleCoverageSubmit = (e: React.FormEvent) => {
@@ -175,8 +176,8 @@ export default function HomePage() {
         {/* Plans */}
         <section id="planos" className="py-24 bg-card/30 relative">
           <div className="container mx-auto px-4">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4">Escolha seu plano</h2>
+            <div className="text-center max-w-3xl mx-auto mb-10">
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4">Planos Fibra Óptica</h2>
               {selectedCity && (
                 <p className="text-xl text-primary font-medium">
                   Disponível em {selectedCity} — instalação express
@@ -184,164 +185,246 @@ export default function HomePage() {
               )}
             </div>
 
-            <motion.div 
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-100px" }}
-            >
-              {/* Plan 1 */}
-              <motion.div variants={itemVariants}>
-                <Card className="h-full flex flex-col bg-card border-border/50 hover:border-primary/50 transition-colors">
-                  <CardHeader>
-                    <Badge variant="secondary" className="w-fit mb-4">Plano 500 Mega</Badge>
-                    <CardTitle className="text-4xl font-black">
-                      R$ 89<span className="text-2xl text-muted-foreground">,90</span>
-                      <span className="text-sm font-normal text-muted-foreground block mt-1">/mês</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    <ul className="space-y-4">
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm">Streaming HD sem travar</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm">Wi-Fi incluso</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm">Suporte 24h</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm">Instalação em 24h</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                  <CardFooter>
-                    <Button className="w-full" asChild data-testid="button-contratar-500">
-                      <Link href="/contratar?plano=500">Contratar este plano</Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </motion.div>
+            {/* Plan tabs */}
+            <div className="flex justify-center mb-10">
+              <div className="inline-flex bg-card border border-border rounded-full p-1 gap-1">
+                {[
+                  { id: "fibra", label: "🌐 Fibra Óptica" },
+                  { id: "tv", label: "📺 TAC TV" },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setPlanTab(tab.id as "fibra" | "tv")}
+                    className={`px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                      planTab === tab.id
+                        ? "bg-primary text-primary-foreground shadow-[0_0_12px_rgba(22,163,74,0.3)]"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-              {/* Plan 2 */}
-              <motion.div variants={itemVariants}>
-                <Card className="h-full flex flex-col bg-card border-border/50 hover:border-primary/50 transition-colors">
-                  <CardHeader>
-                    <Badge variant="secondary" className="w-fit mb-4">Plano 800 Mega</Badge>
-                    <CardTitle className="text-4xl font-black">
-                      R$ 109<span className="text-2xl text-muted-foreground">,90</span>
-                      <span className="text-sm font-normal text-muted-foreground block mt-1">/mês</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    <ul className="space-y-4">
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm">Streaming 4K</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm">Wi-Fi 6</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm">Suporte 24h</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm">Instalação prioritária</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                  <CardFooter>
-                    <Button className="w-full" asChild data-testid="button-contratar-800">
-                      <Link href="/contratar?plano=800">Contratar este plano</Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </motion.div>
+            {/* Fibra plans */}
+            {planTab === "fibra" && (
+              <motion.div
+                key="fibra"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                {/* Fibra 400M */}
+                <motion.div variants={itemVariants}>
+                  <Card className="h-full flex flex-col bg-card border-border/50 hover:border-primary/50 transition-colors">
+                    <CardHeader>
+                      <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
+                        <span className="text-primary font-black text-sm leading-tight text-center">400<br/>Mega</span>
+                      </div>
+                      <CardTitle className="text-4xl font-black">
+                        R$ 89<span className="text-2xl text-muted-foreground">,90</span>
+                        <span className="text-sm font-normal text-muted-foreground block mt-1">/mês</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                      <ul className="space-y-3">
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Streaming HD sem travar</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Wi-Fi incluso</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Suporte 24h</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Instalação em até 24h</span></li>
+                      </ul>
+                    </CardContent>
+                    <CardFooter>
+                      <Button className="w-full" asChild data-testid="button-contratar-fibra400">
+                        <Link href="/contratar?plano=fibra400">Contratar este plano</Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
 
-              {/* Plan 3 - Most Popular */}
-              <motion.div variants={itemVariants} className="lg:-mt-4 lg:mb-4 z-10">
-                <Card className="h-full flex flex-col bg-card border-primary shadow-[0_0_30px_rgba(22,163,74,0.15)] relative overflow-hidden">
-                  <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary to-emerald-400"></div>
-                  <CardHeader>
-                    <Badge className="w-fit mb-4 bg-primary text-primary-foreground hover:bg-primary">MAIS CONTRATADO</Badge>
-                    <CardTitle className="text-4xl font-black">
-                      R$ 129<span className="text-2xl text-muted-foreground">,90</span>
-                      <span className="text-sm font-normal text-muted-foreground block mt-1">/mês</span>
-                    </CardTitle>
-                    <CardDescription className="text-base font-semibold text-foreground mt-2">Plano 1 Giga</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    <ul className="space-y-4">
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm font-medium">Streaming 4K+</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm font-medium">Wi-Fi 6 AX</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm font-medium">Upload alto para home office</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm font-medium">Gaming sem lag</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                  <CardFooter>
-                    <Button className="w-full text-base h-12" asChild data-testid="button-contratar-1giga">
-                      <Link href="/contratar?plano=1giga">Contratar este plano</Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </motion.div>
+                {/* Fibra 600M */}
+                <motion.div variants={itemVariants}>
+                  <Card className="h-full flex flex-col bg-card border-border/50 hover:border-primary/50 transition-colors">
+                    <CardHeader>
+                      <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
+                        <span className="text-primary font-black text-sm leading-tight text-center">600<br/>Mega</span>
+                      </div>
+                      <CardTitle className="text-4xl font-black">
+                        R$ 99<span className="text-2xl text-muted-foreground">,90</span>
+                        <span className="text-sm font-normal text-muted-foreground block mt-1">/mês</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                      <ul className="space-y-3">
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Streaming 4K</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Wi-Fi 6</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Suporte 24h</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Instalação prioritária</span></li>
+                      </ul>
+                    </CardContent>
+                    <CardFooter>
+                      <Button className="w-full" asChild data-testid="button-contratar-fibra600">
+                        <Link href="/contratar?plano=fibra600">Contratar este plano</Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
 
-              {/* Plan 4 */}
-              <motion.div variants={itemVariants}>
-                <Card className="h-full flex flex-col bg-card border-border/50 hover:border-primary/50 transition-colors">
-                  <CardHeader>
-                    <Badge variant="secondary" className="w-fit mb-4">Plano 1 Giga + TAC TV</Badge>
-                    <CardTitle className="text-4xl font-black">
-                      R$ 159<span className="text-2xl text-muted-foreground">,90</span>
-                      <span className="text-sm font-normal text-muted-foreground block mt-1">/mês</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="flex-1">
-                    <ul className="space-y-4">
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm">Tudo do 1 Giga</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm font-semibold text-primary">180 canais ao vivo</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0" />
-                        <span className="text-sm">TAC TV incluída</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                  <CardFooter>
-                    <Button className="w-full" asChild data-testid="button-contratar-1gigatv">
-                      <Link href="/contratar?plano=1gigatv">Contratar este plano</Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </motion.div>
+                {/* Fibra 800M - Most Popular */}
+                <motion.div variants={itemVariants} className="lg:-mt-4 lg:mb-4 z-10">
+                  <Card className="h-full flex flex-col bg-card border-primary shadow-[0_0_30px_rgba(22,163,74,0.15)] relative overflow-hidden">
+                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary to-emerald-400"></div>
+                    <CardHeader>
+                      <Badge className="w-fit mb-3 bg-primary text-primary-foreground hover:bg-primary">MAIS CONTRATADO</Badge>
+                      <div className="w-16 h-16 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center mb-2">
+                        <span className="text-primary font-black text-sm leading-tight text-center">800<br/>Mega</span>
+                      </div>
+                      <CardTitle className="text-4xl font-black">
+                        R$ 109<span className="text-2xl text-muted-foreground">,90</span>
+                        <span className="text-sm font-normal text-muted-foreground block mt-1">/mês</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                      <ul className="space-y-3">
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm font-medium">Streaming 4K+</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm font-medium">Wi-Fi 6 AX</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm font-medium">Home office de alta performance</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm font-medium">Gaming sem lag</span></li>
+                      </ul>
+                    </CardContent>
+                    <CardFooter>
+                      <Button className="w-full text-base h-12" asChild data-testid="button-contratar-fibra800">
+                        <Link href="/contratar?plano=fibra800">Contratar este plano</Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
 
-            </motion.div>
+                {/* Fibra 1 Giga */}
+                <motion.div variants={itemVariants}>
+                  <Card className="h-full flex flex-col bg-card border-border/50 hover:border-primary/50 transition-colors">
+                    <CardHeader>
+                      <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
+                        <span className="text-primary font-black text-sm leading-tight text-center">1<br/>Giga</span>
+                      </div>
+                      <CardTitle className="text-4xl font-black">
+                        R$ 119<span className="text-2xl text-muted-foreground">,90</span>
+                        <span className="text-sm font-normal text-muted-foreground block mt-1">/mês</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                      <ul className="space-y-3">
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Velocidade máxima</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Múltiplos dispositivos simultâneos</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Wi-Fi 6 AX incluso</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Suporte VIP 24h</span></li>
+                      </ul>
+                    </CardContent>
+                    <CardFooter>
+                      <Button className="w-full" asChild data-testid="button-contratar-fibra1g">
+                        <Link href="/contratar?plano=fibra1g">Contratar este plano</Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
+              </motion.div>
+            )}
+
+            {/* TAC TV plans */}
+            {planTab === "tv" && (
+              <motion.div
+                key="tv"
+                className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                {/* TV Essencial */}
+                <motion.div variants={itemVariants}>
+                  <Card className="h-full flex flex-col bg-card border-border/50 hover:border-primary/50 transition-colors">
+                    <CardHeader>
+                      <Badge variant="secondary" className="w-fit mb-4">TAC TV Essencial</Badge>
+                      <CardDescription className="text-base font-semibold text-foreground">+ Fibra 400 Mega</CardDescription>
+                      <CardTitle className="text-4xl font-black mt-1">
+                        R$ 119<span className="text-2xl text-muted-foreground">,90</span>
+                        <span className="text-sm font-normal text-muted-foreground block mt-1">/mês</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                      <ul className="space-y-3">
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm font-semibold text-primary">Canais ao vivo</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">400 Mega fibra incluso</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Suporte 24h</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Instalação em até 24h</span></li>
+                      </ul>
+                    </CardContent>
+                    <CardFooter>
+                      <Button className="w-full" asChild data-testid="button-contratar-tv400">
+                        <Link href="/contratar?plano=tv400">Contratar este plano</Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
+
+                {/* TV Plus */}
+                <motion.div variants={itemVariants} className="md:-mt-4 md:mb-4 z-10">
+                  <Card className="h-full flex flex-col bg-card border-primary shadow-[0_0_30px_rgba(22,163,74,0.15)] relative overflow-hidden">
+                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary to-emerald-400"></div>
+                    <CardHeader>
+                      <Badge className="w-fit mb-4 bg-primary text-primary-foreground hover:bg-primary">MAIS POPULAR</Badge>
+                      <CardDescription className="text-base font-semibold text-foreground">+ Fibra 600 Mega</CardDescription>
+                      <CardTitle className="text-4xl font-black mt-1">
+                        R$ 139<span className="text-2xl text-muted-foreground">,90</span>
+                        <span className="text-sm font-normal text-muted-foreground block mt-1">/mês</span>
+                      </CardTitle>
+                      <CardDescription className="text-base font-semibold text-foreground mt-1">TAC TV Plus</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                      <ul className="space-y-3">
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm font-medium font-semibold text-primary">Mais canais ao vivo</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm font-medium">600 Mega fibra incluso</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm font-medium">Conteúdo premium</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm font-medium">Suporte VIP 24h</span></li>
+                      </ul>
+                    </CardContent>
+                    <CardFooter>
+                      <Button className="w-full text-base h-12" asChild data-testid="button-contratar-tv600">
+                        <Link href="/contratar?plano=tv600">Contratar este plano</Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
+
+                {/* TV Premium */}
+                <motion.div variants={itemVariants}>
+                  <Card className="h-full flex flex-col bg-card border-border/50 hover:border-primary/50 transition-colors">
+                    <CardHeader>
+                      <Badge variant="secondary" className="w-fit mb-4">TAC TV Premium</Badge>
+                      <CardDescription className="text-base font-semibold text-foreground">+ Fibra 1 Giga</CardDescription>
+                      <CardTitle className="text-4xl font-black mt-1">
+                        R$ 169<span className="text-2xl text-muted-foreground">,90</span>
+                        <span className="text-sm font-normal text-muted-foreground block mt-1">/mês</span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-1">
+                      <ul className="space-y-3">
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm font-semibold text-primary">Canais premium + esportes</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">1 Giga fibra incluso</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Wi-Fi 6 AX incluso</span></li>
+                        <li className="flex items-start gap-3"><Check className="w-5 h-5 text-primary shrink-0" /><span className="text-sm">Suporte VIP 24h</span></li>
+                      </ul>
+                    </CardContent>
+                    <CardFooter>
+                      <Button className="w-full" asChild data-testid="button-contratar-tv1g">
+                        <Link href="/contratar?plano=tv1g">Contratar este plano</Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
+              </motion.div>
+            )}
           </div>
         </section>
 

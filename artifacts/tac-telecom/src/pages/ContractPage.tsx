@@ -3,7 +3,8 @@ import { useLocation, useSearch } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check, ChevronRight, ChevronLeft, MapPin, User,
-  ClipboardList, MessageCircle, Calendar, Clock, UserPlus, X
+  ClipboardList, MessageCircle, Calendar, Clock, UserPlus, X,
+  Locate, Loader2, Navigation
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const WHATSAPP_NUMBER = "554836600800";
 
 const PLANS: Record<string, string> = {
-  "500": "Plano 500 Mega — R$ 89,90/mês",
-  "800": "Plano 800 Mega — R$ 109,90/mês",
-  "1giga": "Plano 1 Giga — R$ 129,90/mês",
-  "1gigatv": "Plano 1 Giga + TAC TV — R$ 159,90/mês",
+  "fibra400": "Fibra 400 Mega — R$ 89,90/mês",
+  "fibra600": "Fibra 600 Mega — R$ 99,90/mês",
+  "fibra800": "Fibra 800 Mega — R$ 109,90/mês",
+  "fibra1g": "Fibra 1 Giga — R$ 119,90/mês",
+  "tv400": "TAC TV Essencial + 400 Mega — R$ 119,90/mês",
+  "tv600": "TAC TV Plus + 600 Mega — R$ 139,90/mês",
+  "tv1g": "TAC TV Premium + 1 Giga — R$ 169,90/mês",
 };
 
 const CITIES = [
@@ -125,12 +129,36 @@ export default function ContractPage() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const params = new URLSearchParams(search);
-  const planoKey = params.get("plano") ?? "1giga";
-  const planoLabel = PLANS[planoKey] ?? PLANS["1giga"];
+  const planoKey = params.get("plano") ?? "fibra1g";
+  const planoLabel = PLANS[planoKey] ?? PLANS["fibra1g"];
 
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
   const [sent, setSent] = useState(false);
+
+  const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locError, setLocError] = useState("");
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      setLocError("Geolocalização não suportada pelo seu navegador.");
+      return;
+    }
+    setLocating(true);
+    setLocError("");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setLocating(false);
+      },
+      () => {
+        setLocError("Não foi possível obter a localização. Verifique as permissões do navegador.");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const [step1, setStep1] = useState<Step1Data>({
     nome: "", email: "", telefone: "",
@@ -187,6 +215,11 @@ export default function ContractPage() {
       `Rua: ${step2.rua}, ${step2.numero}${step2.complemento ? ` — ${step2.complemento}` : ""}`,
       `Bairro: ${step2.bairro}`,
       `Cidade: ${step2.cidade} — ${step2.estado}`,
+    );
+    if (gpsCoords) {
+      lines.push(`Localização precisa (GPS): https://maps.google.com/?q=${gpsCoords.lat},${gpsCoords.lng}`);
+    }
+    lines.push(
       ``,
       `*Data preferida para instalação:*`,
       `${selectedDay?.weekday}, ${selectedDay?.label} — ${selectedSlot?.label} (${selectedSlot?.range})`,
@@ -361,6 +394,51 @@ export default function ContractPage() {
                     subtitle="Onde você quer sua nova conexão ultrarrápida?"
                   />
                   <div className="p-6 md:p-8 space-y-5">
+                    {/* GPS location button */}
+                    <div>
+                      {!gpsCoords ? (
+                        <button
+                          type="button"
+                          data-testid="button-usar-localizacao"
+                          onClick={handleGetLocation}
+                          disabled={locating}
+                          className="w-full flex items-center justify-center gap-2.5 h-11 rounded-xl border border-dashed border-primary/40 text-primary hover:bg-primary/5 hover:border-primary/60 transition-all duration-150 text-sm font-medium disabled:opacity-60"
+                        >
+                          {locating ? (
+                            <><Loader2 className="w-4 h-4 animate-spin" />Obtendo localização...</>
+                          ) : (
+                            <><Locate className="w-4 h-4" />Usar minha localização atual (GPS)</>
+                          )}
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-3 bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
+                          <Navigation className="w-4 h-4 text-primary shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-primary">Localização capturada</p>
+                            <a
+                              href={`https://maps.google.com/?q=${gpsCoords.lat},${gpsCoords.lng}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-muted-foreground hover:text-primary underline"
+                            >
+                              {gpsCoords.lat.toFixed(5)}, {gpsCoords.lng.toFixed(5)} — Ver no mapa
+                            </a>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setGpsCoords(null)}
+                            className="text-muted-foreground hover:text-foreground"
+                            data-testid="button-remover-gps"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                      {locError && (
+                        <p className="text-xs text-destructive mt-2 text-center">{locError}</p>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-2 gap-5">
                       <div className="space-y-2">
                         <Label htmlFor="cep">CEP</Label>
@@ -527,6 +605,17 @@ export default function ContractPage() {
                         <p className="text-sm font-medium">{step2.rua}, {step2.numero}{step2.complemento ? ` — ${step2.complemento}` : ""}</p>
                         <p className="text-sm text-muted-foreground">{step2.bairro}, {step2.cidade} — {step2.estado}</p>
                         <p className="text-sm text-muted-foreground">CEP: {step2.cep}</p>
+                        {gpsCoords && (
+                          <a
+                            href={`https://maps.google.com/?q=${gpsCoords.lat},${gpsCoords.lng}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-xs text-primary hover:underline mt-1"
+                          >
+                            <Navigation className="w-3 h-3" />
+                            Localização GPS confirmada — Ver no mapa
+                          </a>
+                        )}
                       </div>
                     </div>
 
