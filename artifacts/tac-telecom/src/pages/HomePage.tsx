@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import {
@@ -32,9 +32,61 @@ const CITIES = [
   "Pedras Grandes",
 ];
 
+type GoogleReview = {
+  authorName: string;
+  authorPhoto: string;
+  rating: number;
+  text: string;
+  relativeTime: string;
+};
+
+type GoogleReviewsData = {
+  configured: boolean;
+  rating?: number;
+  totalRatings?: number;
+  reviews?: GoogleReview[];
+  writeReviewUrl?: string;
+};
+
+const STATIC_REVIEWS = [
+  {
+    authorName: "Carlos Mendes",
+    authorPhoto: "",
+    rating: 5,
+    text: "Melhor internet que já tive em Jaguaruna. O pessoal instalou no mesmo dia que pedi e o ping nos jogos é muito baixo.",
+    relativeTime: "",
+  },
+  {
+    authorName: "Ana Paula Santos",
+    authorPhoto: "",
+    rating: 5,
+    text: "Suporte maravilhoso! Uma vez deu problema na minha rua e o técnico estava aqui em menos de uma hora. Vale cada centavo.",
+    relativeTime: "",
+  },
+  {
+    authorName: "Ricardo Oliveira",
+    authorPhoto: "",
+    rating: 5,
+    text: "Trabalho em home office em Tubarão e precisava de estabilidade. O plano de 1 Giga da TAC nunca me deixou na mão.",
+    relativeTime: "",
+  },
+];
+
 export default function HomePage() {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [planTab, setPlanTab] = useState<"fibra" | "tv">("fibra");
+  const [reviewsData, setReviewsData] = useState<GoogleReviewsData | null>(null);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/google-reviews")
+      .then(r => r.ok ? r.json() : null)
+      .then((data: GoogleReviewsData | null) => {
+        setReviewsData(data);
+      })
+      .catch(() => setReviewsData(null))
+      .finally(() => setReviewsLoading(false));
+  }, []);
   const [coverageSubmitted, setCoverageSubmitted] = useState(false);
 
   const handleCoverageSubmit = (e: React.FormEvent) => {
@@ -474,68 +526,116 @@ export default function HomePage() {
         {/* Social Proof */}
         <section className="py-24 bg-card/30">
           <div className="container mx-auto px-4">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-3xl md:text-5xl font-black tracking-tight">O que nossos clientes dizem</h2>
+            <div className="text-center max-w-3xl mx-auto mb-6">
+              <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4">O que nossos clientes dizem</h2>
+              {reviewsData?.configured && reviewsData.rating && (
+                <div className="flex items-center justify-center gap-3">
+                  <div className="flex gap-1 text-primary">
+                    {[1,2,3,4,5].map(i => (
+                      <Star key={i} className={`w-6 h-6 ${i <= Math.round(reviewsData.rating!) ? "fill-current" : "opacity-30"}`} />
+                    ))}
+                  </div>
+                  <span className="text-2xl font-black">{reviewsData.rating.toFixed(1)}</span>
+                  <span className="text-muted-foreground text-sm">
+                    no Google · {reviewsData.totalRatings?.toLocaleString("pt-BR")} avaliações
+                  </span>
+                </div>
+              )}
+              {(!reviewsData?.configured || !reviewsData.rating) && !reviewsLoading && (
+                <p className="text-muted-foreground">4.9 estrelas no Google · +850 avaliações</p>
+              )}
             </div>
 
-            <motion.div 
-              className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12"
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: "-50px" }}
-            >
-              <motion.div variants={itemVariants}>
-                <Card className="bg-card border-border/50">
-                  <CardContent className="pt-6">
-                    <div className="flex gap-1 mb-4 text-primary">
-                      <Star className="w-5 h-5 fill-current" />
-                      <Star className="w-5 h-5 fill-current" />
-                      <Star className="w-5 h-5 fill-current" />
-                      <Star className="w-5 h-5 fill-current" />
-                      <Star className="w-5 h-5 fill-current" />
+            {/* Loading skeleton */}
+            {reviewsLoading && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12">
+                {[1,2,3].map(i => (
+                  <div key={i} className="bg-card border border-border/50 rounded-xl p-6 animate-pulse">
+                    <div className="flex gap-1 mb-4">{[1,2,3,4,5].map(j => <div key={j} className="w-5 h-5 rounded bg-muted" />)}</div>
+                    <div className="space-y-2 mb-6">
+                      <div className="h-3 bg-muted rounded w-full" />
+                      <div className="h-3 bg-muted rounded w-5/6" />
+                      <div className="h-3 bg-muted rounded w-4/6" />
                     </div>
-                    <p className="text-muted-foreground mb-6">"Melhor internet que já tive em Jaguaruna. O pessoal instalou no mesmo dia que pedi e o ping nos jogos é muito baixo."</p>
-                    <p className="font-bold text-foreground">Carlos Mendes</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
+                    <div className="h-4 bg-muted rounded w-1/3" />
+                  </div>
+                ))}
+              </div>
+            )}
 
-              <motion.div variants={itemVariants}>
-                <Card className="bg-card border-border/50">
-                  <CardContent className="pt-6">
-                    <div className="flex gap-1 mb-4 text-primary">
-                      <Star className="w-5 h-5 fill-current" />
-                      <Star className="w-5 h-5 fill-current" />
-                      <Star className="w-5 h-5 fill-current" />
-                      <Star className="w-5 h-5 fill-current" />
-                      <Star className="w-5 h-5 fill-current" />
-                    </div>
-                    <p className="text-muted-foreground mb-6">"Suporte maravilhoso! Uma vez deu problema na minha rua e o técnico estava aqui em menos de uma hora. Vale cada centavo."</p>
-                    <p className="font-bold text-foreground">Ana Paula Santos</p>
-                  </CardContent>
-                </Card>
+            {/* Reviews grid */}
+            {!reviewsLoading && (
+              <motion.div
+                className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-12"
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-50px" }}
+              >
+                {(reviewsData?.configured && reviewsData.reviews?.length
+                  ? reviewsData.reviews.slice(0, 3)
+                  : STATIC_REVIEWS
+                ).map((review, idx) => (
+                  <motion.div key={idx} variants={itemVariants}>
+                    <Card className="h-full bg-card border-border/50 hover:border-primary/30 transition-colors">
+                      <CardContent className="pt-6 flex flex-col h-full">
+                        <div className="flex gap-1 mb-4 text-primary">
+                          {[1,2,3,4,5].map(i => (
+                            <Star key={i} className={`w-5 h-5 ${i <= review.rating ? "fill-current" : "opacity-20"}`} />
+                          ))}
+                        </div>
+                        <p className="text-muted-foreground mb-6 flex-1 text-sm leading-relaxed">"{review.text}"</p>
+                        <div className="flex items-center gap-3">
+                          {review.authorPhoto ? (
+                            <img
+                              src={review.authorPhoto}
+                              alt={review.authorName}
+                              className="w-9 h-9 rounded-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                              {review.authorName.charAt(0)}
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-bold text-foreground text-sm">{review.authorName}</p>
+                            {review.relativeTime && (
+                              <p className="text-xs text-muted-foreground">{review.relativeTime}</p>
+                            )}
+                          </div>
+                          <div className="ml-auto">
+                            <svg viewBox="0 0 24 24" className="w-5 h-5 opacity-40" fill="currentColor">
+                              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                            </svg>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
               </motion.div>
+            )}
 
-              <motion.div variants={itemVariants}>
-                <Card className="bg-card border-border/50">
-                  <CardContent className="pt-6">
-                    <div className="flex gap-1 mb-4 text-primary">
-                      <Star className="w-5 h-5 fill-current" />
-                      <Star className="w-5 h-5 fill-current" />
-                      <Star className="w-5 h-5 fill-current" />
-                      <Star className="w-5 h-5 fill-current" />
-                      <Star className="w-5 h-5 fill-current" />
-                    </div>
-                    <p className="text-muted-foreground mb-6">"Trabalho em home office em Tubarão e precisava de estabilidade. O plano de 1 Giga da TAC nunca me deixou na mão."</p>
-                    <p className="font-bold text-foreground">Ricardo Oliveira</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            </motion.div>
-
-            <div className="text-center">
-              <p className="text-lg font-medium text-foreground">4.9 estrelas no Google <span className="text-muted-foreground font-normal mx-2">|</span> +850 avaliações</p>
+            {/* CTA row */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4">
+              <a
+                href={reviewsData?.writeReviewUrl ?? "https://share.google/ZQ5207XOUWQl8LwTa"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-white text-gray-800 font-semibold px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-shadow text-sm"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Avaliar a TAC Telecom no Google
+              </a>
             </div>
           </div>
         </section>
