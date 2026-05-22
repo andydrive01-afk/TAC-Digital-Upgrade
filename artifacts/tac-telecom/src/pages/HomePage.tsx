@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-const WHATSAPP_LINK = "https://wa.me/5548999990000";
+const WHATSAPP_LINK = "https://wa.me/554836600800";
 
 const CITIES = [
   "Jaguaruna",
@@ -88,7 +88,7 @@ export default function HomePage() {
           <div className="flex items-center gap-4">
             <div className="hidden sm:flex items-center gap-2 text-sm font-semibold text-primary">
               <Phone className="w-4 h-4" />
-              <span>(48) 9 9999-0000</span>
+              <span>(48) 3660-0800</span>
             </div>
           </div>
         </div>
@@ -222,8 +222,8 @@ export default function HomePage() {
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Button className="w-full" asChild>
-                      <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer">Contratar via WhatsApp</a>
+                    <Button className="w-full" asChild data-testid="button-contratar-500">
+                      <Link href="/contratar?plano=500">Contratar este plano</Link>
                     </Button>
                   </CardFooter>
                 </Card>
@@ -260,8 +260,8 @@ export default function HomePage() {
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Button className="w-full" asChild>
-                      <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer">Contratar via WhatsApp</a>
+                    <Button className="w-full" asChild data-testid="button-contratar-800">
+                      <Link href="/contratar?plano=800">Contratar este plano</Link>
                     </Button>
                   </CardFooter>
                 </Card>
@@ -300,8 +300,8 @@ export default function HomePage() {
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Button className="w-full text-base h-12" asChild>
-                      <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer">Contratar via WhatsApp</a>
+                    <Button className="w-full text-base h-12" asChild data-testid="button-contratar-1giga">
+                      <Link href="/contratar?plano=1giga">Contratar este plano</Link>
                     </Button>
                   </CardFooter>
                 </Card>
@@ -334,8 +334,8 @@ export default function HomePage() {
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Button className="w-full" asChild>
-                      <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer">Contratar via WhatsApp</a>
+                    <Button className="w-full" asChild data-testid="button-contratar-1gigatv">
+                      <Link href="/contratar?plano=1gigatv">Contratar este plano</Link>
                     </Button>
                   </CardFooter>
                 </Card>
@@ -536,7 +536,7 @@ export default function HomePage() {
               <div className="space-y-4">
                 <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors w-fit">
                   <MessageCircle className="w-5 h-5" />
-                  <span>(48) 9 9999-0000</span>
+                  <span>(48) 3660-0800</span>
                 </a>
                 <a href="mailto:atendimento@tactelecom.com.br" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors w-fit">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
