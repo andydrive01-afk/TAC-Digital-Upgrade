@@ -52,7 +52,7 @@ type Step3Data = { data: string; turno: string };
 
 const stepVariants = {
   enter: (dir: number) => ({ opacity: 0, x: dir > 0 ? 40 : -40 }),
-  center: { opacity: 1, x: 0, transition: { duration: 0.3, ease: "easeOut" } },
+  center: { opacity: 1, x: 0, transition: { duration: 0.3, ease: "easeOut" as const } },
   exit: (dir: number) => ({ opacity: 0, x: dir > 0 ? -40 : 40, transition: { duration: 0.2 } }),
 };
 

@@ -1,20 +1,64 @@
-// Export your models here. Add one export per file
-// export * from "./posts";
-//
-// Each model/table should ideally be split into different files.
-// Each model/table should define a Drizzle table, insert schema, and types:
-//
-//   import { pgTable, text, serial } from "drizzle-orm/pg-core";
-//   import { createInsertSchema } from "drizzle-zod";
-//   import { z } from "zod/v4";
-//
-//   export const postsTable = pgTable("posts", {
-//     id: serial("id").primaryKey(),
-//     title: text("title").notNull(),
-//   });
-//
-//   export const insertPostSchema = createInsertSchema(postsTable).omit({ id: true });
-//   export type InsertPost = z.infer<typeof insertPostSchema>;
-//   export type Post = typeof postsTable.$inferSelect;
+import { pgTable, text, integer, boolean, serial, jsonb, timestamp } from "drizzle-orm/pg-core";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
-export {}
+export const heroes = pgTable("heroes", {
+  id: serial("id").primaryKey(),
+  badge: text("badge").notNull().default(""),
+  title: text("title").notNull(),
+  titleHighlight: text("title_highlight").notNull().default(""),
+  subtitle: text("subtitle").notNull().default(""),
+  imageUrl: text("image_url").notNull().default(""),
+  ctaPrimary: text("cta_primary").notNull().default("Ver Planos"),
+  ctaPrimaryHref: text("cta_primary_href").notNull().default("/#planos"),
+  ctaSecondary: text("cta_secondary").notNull().default("Consultar Cobertura"),
+  ctaSecondaryHref: text("cta_secondary_href").notNull().default("/#cobertura"),
+  order: integer("order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const InsertHero = createInsertSchema(heroes);
+export const SelectHero = createSelectSchema(heroes);
+export type Hero = typeof heroes.$inferSelect;
+export type InsertHeroType = typeof heroes.$inferInsert;
+
+export const plans = pgTable("plans", {
+  id: serial("id").primaryKey(),
+  tab: text("tab").notNull().default("fibra"),
+  name: text("name").notNull(),
+  speed: text("speed").notNull().default(""),
+  price: text("price").notNull(),
+  priceCents: text("price_cents").notNull().default("90"),
+  badge: text("badge").notNull().default(""),
+  isFeatured: boolean("is_featured").notNull().default(false),
+  icons: jsonb("icons").$type<string[]>().notNull().default([]),
+  features: jsonb("features").$type<string[]>().notNull().default([]),
+  planKey: text("plan_key").notNull().unique(),
+  order: integer("order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const InsertPlan = createInsertSchema(plans);
+export const SelectPlan = createSelectSchema(plans);
+export type Plan = typeof plans.$inferSelect;
+export type InsertPlanType = typeof plans.$inferInsert;
+
+export const coverageCities = pgTable("coverage_cities", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  state: text("state").notNull().default("SC"),
+  active: boolean("active").notNull().default(true),
+  order: integer("order").notNull().default(0),
+});
+
+export const InsertCoverageCity = createInsertSchema(coverageCities);
+export type CoverageCity = typeof coverageCities.$inferSelect;
+
+export const siteConfig = pgTable("site_config", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type SiteConfigRow = typeof siteConfig.$inferSelect;
