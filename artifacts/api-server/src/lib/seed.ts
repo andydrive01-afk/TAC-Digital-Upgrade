@@ -60,6 +60,8 @@ export async function seedDefaultData() {
       { key: "google_places_api_key", value: "" },
       { key: "google_place_search_query", value: "TAC Telecom Jaguaruna SC" },
       { key: "google_place_id", value: "" },
+      { key: "logo_url", value: "" },
+      { key: "favicon_url", value: "" },
     ]);
   }
 }

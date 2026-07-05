@@ -9,7 +9,7 @@ import {
   Phone, Star, Briefcase, Gauge, Users, Home, LogOut,
   Plus, Trash2, Pencil, Save, X, Eye, EyeOff,
   ChevronUp, ChevronDown, Check, Image as ImageIcon, Settings,
-  MapPin, LayoutList, Layers, Loader2,
+  MapPin, LayoutList, Layers, Loader2, Monitor,
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -163,6 +163,64 @@ function ImageUpload({ value, onChange }: { value: string; onChange: (url: strin
   );
 }
 
+// ── HERO PREVIEW ─────────────────────────────────────────────────────────────
+function HeroPreview({ hero }: { hero: Partial<Hero> }) {
+  const hasImage = Boolean(hero.imageUrl);
+  return (
+    <div className="relative overflow-hidden rounded-xl border border-border aspect-video bg-background select-none">
+      {hasImage && (
+        <img
+          src={hero.imageUrl}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-10 z-0 pointer-events-none"
+          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+        />
+      )}
+      <div className="absolute inset-0 z-0" style={{ backgroundColor: "hsl(var(--background))", opacity: hasImage ? 0.7 : 1 }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 rounded-full z-0 pointer-events-none"
+        style={{ background: "radial-gradient(circle, hsl(var(--primary)/0.2) 0%, transparent 70%)", filter: "blur(40px)" }} />
+
+      <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-6 gap-2">
+        {hero.badge && (
+          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-medium"
+            style={{ borderColor: "hsl(var(--primary)/0.35)", color: "hsl(var(--primary))", background: "hsl(var(--primary)/0.07)" }}>
+            <Zap className="w-3 h-3 shrink-0" />
+            <span className="truncate max-w-[180px]">{hero.badge}</span>
+          </div>
+        )}
+        <h2 className="text-base sm:text-xl md:text-2xl font-black leading-tight tracking-tight">
+          {hero.title || <span className="opacity-20">Título</span>}
+          {" "}
+          {hero.titleHighlight && (
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-400">
+              {hero.titleHighlight}
+            </span>
+          )}
+          {hero.subtitle && <span className="block text-sm sm:text-base md:text-lg font-black mt-0.5">{hero.subtitle}</span>}
+        </h2>
+        <div className="flex flex-wrap gap-2 mt-1 justify-center">
+          {hero.ctaPrimary && (
+            <div className="px-3 py-1.5 rounded-md text-xs font-semibold" style={{ background: "hsl(var(--primary))", color: "hsl(var(--primary-foreground))" }}>
+              {hero.ctaPrimary}
+            </div>
+          )}
+          {hero.ctaSecondary && (
+            <div className="px-3 py-1.5 rounded-md text-xs font-semibold border" style={{ borderColor: "hsl(var(--border))" }}>
+              {hero.ctaSecondary}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1 px-2 py-0.5 rounded text-[10px] opacity-40"
+        style={{ background: "hsl(var(--muted))", color: "hsl(var(--muted-foreground))" }}>
+        <Monitor className="w-2.5 h-2.5" />
+        preview
+      </div>
+    </div>
+  );
+}
+
 // ── LOGIN ──────────────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
   const [password, setPassword] = useState("");
@@ -301,7 +359,8 @@ function HeroesTab({ token }: { token: string }) {
           <CardHeader>
             <CardTitle className="text-base">{editing.id ? "Editar Slide" : "Novo Slide"}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
+            <HeroPreview hero={editing} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label>Badge (ex: "Até 1 Giga")</Label>
@@ -727,6 +786,28 @@ function ConfigTab({ token }: { token: string }) {
   return (
     <div className="space-y-6 max-w-xl">
       <h2 className="text-xl font-bold">Configurações do Site</h2>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Identidade Visual</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1">
+            <Label>Logo do Site</Label>
+            <ImageUpload
+              value={cfg["logo_url"] ?? ""}
+              onChange={url => setCfg({ ...cfg, logo_url: url })}
+            />
+            <p className="text-xs text-muted-foreground">Exibida no cabeçalho. Recomendado: PNG ou SVG transparente, pelo menos 200px de largura.</p>
+          </div>
+          <div className="space-y-1">
+            <Label>Favicon</Label>
+            <ImageUpload
+              value={cfg["favicon_url"] ?? ""}
+              onChange={url => setCfg({ ...cfg, favicon_url: url })}
+            />
+            <p className="text-xs text-muted-foreground">Ícone da aba do browser. Recomendado: PNG 32×32 ou 64×64px.</p>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Google Reviews API</CardTitle></CardHeader>
