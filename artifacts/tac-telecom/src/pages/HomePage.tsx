@@ -211,6 +211,7 @@ export default function HomePage() {
   const [reviewsData, setReviewsData] = useState<GoogleReviewsData | null>(null);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [logoUrl, setLogoUrl] = useState<string>("");
+  const [faviconUrl, setFaviconUrl] = useState<string>("");
   const [coverageSubmitted, setCoverageSubmitted] = useState(false);
 
   useEffect(() => {
@@ -237,9 +238,35 @@ export default function HomePage() {
 
     fetch("/api/content/config")
       .then(r => r.ok ? r.json() : {})
-      .then((cfg: Record<string, string>) => { if (cfg["logo_url"]) setLogoUrl(cfg["logo_url"]); })
+      .then((cfg: Record<string, string>) => {
+        if (cfg["logo_url"]) setLogoUrl(cfg["logo_url"]);
+        if (cfg["favicon_url"]) setFaviconUrl(cfg["favicon_url"]);
+      })
       .catch(() => {});
   }, []);
+
+  // Inject favicon dynamically when config loads
+  useEffect(() => {
+    if (!faviconUrl) return;
+    const isSvg = faviconUrl.startsWith("data:image/svg") || /\.svg(\?|$)/i.test(faviconUrl);
+    // Remove any previously injected dynamic favicons
+    document.querySelectorAll("link[data-dyn-favicon]").forEach(el => el.remove());
+    const add = (rel: string, type: string, href: string, sizes?: string) => {
+      const el = document.createElement("link");
+      el.rel = rel; el.type = type; el.href = href;
+      if (sizes) el.setAttribute("sizes", sizes);
+      el.setAttribute("data-dyn-favicon", "1");
+      document.head.appendChild(el);
+    };
+    if (isSvg) {
+      // SVG: um único arquivo cobre todas as resoluções vetorialmente
+      add("icon", "image/svg+xml", faviconUrl);
+    } else {
+      // PNG/JPG: define em múltiplos tamanhos + apple-touch-icon
+      add("icon", "image/png", faviconUrl, "any");
+      add("apple-touch-icon", "image/png", faviconUrl, "180x180");
+    }
+  }, [faviconUrl]);
 
   const fibraPlans = plans.filter(p => p.tab === "fibra");
   const tvPlans = plans.filter(p => p.tab === "tv");

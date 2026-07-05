@@ -905,11 +905,13 @@ function ConfigTab({ token }: { token: string }) {
           </div>
           <div className="space-y-1">
             <Label>Favicon</Label>
-            <ImageUpload
+            <LogoUpload
               value={cfg["favicon_url"] ?? ""}
               onChange={url => setCfg({ ...cfg, favicon_url: url })}
             />
-            <p className="text-xs text-muted-foreground">Ícone da aba do browser. Recomendado: PNG 32×32 ou 64×64px.</p>
+            <p className="text-xs text-muted-foreground">
+              SVG recomendado — escala para qualquer resolução automaticamente (aba, favoritos, atalhos). PNG também funciona.
+            </p>
           </div>
         </CardContent>
       </Card>
