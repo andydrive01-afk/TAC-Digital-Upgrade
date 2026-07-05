@@ -905,7 +905,7 @@ function ConfigTab({ token }: { token: string }) {
           </div>
           <div className="space-y-1">
             <Label>Favicon</Label>
-            <LogoUpload
+            <ImageUpload
               value={cfg["favicon_url"] ?? ""}
               onChange={url => setCfg({ ...cfg, favicon_url: url })}
             />
