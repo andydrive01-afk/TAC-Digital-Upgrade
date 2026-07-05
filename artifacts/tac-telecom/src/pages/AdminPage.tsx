@@ -93,27 +93,29 @@ function ImageUpload({ value, onChange }: { value: string; onChange: (url: strin
     if (file.size > 10 * 1024 * 1024) { setError("Imagem muito grande (máximo 10MB)"); return; }
     setError("");
     setUploading(true);
-    setProgress(0);
+    setProgress(10);
     try {
-      const res = await fetch(`${API}/storage/uploads/request-url`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
-      });
-      if (!res.ok) throw new Error("Falha ao obter URL de upload");
-      const { uploadURL, objectPath } = await res.json() as { uploadURL: string; objectPath: string };
+      const form = new FormData();
+      form.append("file", file);
 
       const xhr = new XMLHttpRequest();
-      await new Promise<void>((resolve, reject) => {
-        xhr.upload.onprogress = (e) => { if (e.lengthComputable) setProgress(Math.round(e.loaded / e.total * 100)); };
-        xhr.onload = () => xhr.status < 300 ? resolve() : reject(new Error(`Upload falhou: ${xhr.status}`));
+      const { servingUrl } = await new Promise<{ servingUrl: string }>((resolve, reject) => {
+        xhr.upload.onprogress = (e) => { if (e.lengthComputable) setProgress(10 + Math.round(e.loaded / e.total * 85)); };
+        xhr.onload = () => {
+          if (xhr.status < 300) {
+            try { resolve(JSON.parse(xhr.responseText) as { servingUrl: string }); }
+            catch { reject(new Error("Resposta inválida do servidor")); }
+          } else {
+            reject(new Error(`Upload falhou: ${xhr.status}`));
+          }
+        };
         xhr.onerror = () => reject(new Error("Erro de rede no upload"));
-        xhr.open("PUT", uploadURL);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.send(file);
+        xhr.open("POST", `${API}/storage/uploads`);
+        xhr.send(form);
       });
 
-      onChange(`/api/storage${objectPath}`);
+      setProgress(100);
+      onChange(servingUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro no upload");
     } finally {

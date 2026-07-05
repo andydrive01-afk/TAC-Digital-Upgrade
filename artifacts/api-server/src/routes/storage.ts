@@ -1,14 +1,53 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import { Readable } from "stream";
+import multer from "multer";
 import {
   RequestUploadUrlBody,
   RequestUploadUrlResponse,
 } from "@workspace/api-zod";
-import { ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
+import { objectStorageClient, parseObjectPath, ObjectStorageService, ObjectNotFoundError } from "../lib/objectStorage";
 import { ObjectPermission } from "../lib/objectAcl";
+import { randomUUID } from "crypto";
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+
+/**
+ * POST /storage/uploads
+ *
+ * Server-side file upload (avoids CORS with GCS).
+ * Client sends multipart/form-data with a "file" field.
+ * Returns the objectPath for serving via GET /storage/objects/*
+ */
+router.post("/storage/uploads", upload.single("file"), async (req: Request, res: Response) => {
+  if (!req.file) {
+    res.status(400).json({ error: "No file provided" });
+    return;
+  }
+
+  try {
+    const privateObjectDir = objectStorageService.getPrivateObjectDir();
+    const objectId = randomUUID();
+    const ext = (req.file.originalname.split(".").pop() ?? "bin").toLowerCase();
+    const fullPath = `${privateObjectDir}/uploads/${objectId}.${ext}`;
+
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+    const bucket = objectStorageClient.bucket(bucketName);
+    const file = bucket.file(objectName);
+
+    await file.save(req.file.buffer, {
+      contentType: req.file.mimetype,
+      resumable: false,
+    });
+
+    const objectPath = `/objects/uploads/${objectId}.${ext}`;
+    res.json({ objectPath, servingUrl: `/api/storage${objectPath}` });
+  } catch (err) {
+    req.log.error({ err }, "Error uploading file to object storage");
+    res.status(500).json({ error: "Upload failed" });
+  }
+});
 
 /**
  * POST /storage/uploads/request-url
