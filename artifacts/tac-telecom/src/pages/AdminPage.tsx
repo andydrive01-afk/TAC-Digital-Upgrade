@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,9 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Wifi, Zap, Headphones, Tv, Upload, Shield, Smartphone,
   Phone, Star, Briefcase, Gauge, Users, Home, LogOut,
-  Plus, Trash2, Pencil, Save, X, Eye, EyeOff, GripVertical,
+  Plus, Trash2, Pencil, Save, X, Eye, EyeOff,
   ChevronUp, ChevronDown, Check, Image as ImageIcon, Settings,
-  MapPin, LayoutList, Layers,
+  MapPin, LayoutList, Layers, Loader2,
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -79,6 +79,86 @@ type Config = Record<string, string>;
 
 function authHeader(token: string) {
   return { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" };
+}
+
+// ── IMAGE UPLOAD ──────────────────────────────────────────────────────────────
+function ImageUpload({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState("");
+
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) { setError("Selecione uma imagem (JPG, PNG, WebP)"); return; }
+    if (file.size > 10 * 1024 * 1024) { setError("Imagem muito grande (máximo 10MB)"); return; }
+    setError("");
+    setUploading(true);
+    setProgress(0);
+    try {
+      const res = await fetch(`${API}/storage/uploads/request-url`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
+      });
+      if (!res.ok) throw new Error("Falha ao obter URL de upload");
+      const { uploadURL, objectPath } = await res.json() as { uploadURL: string; objectPath: string };
+
+      const xhr = new XMLHttpRequest();
+      await new Promise<void>((resolve, reject) => {
+        xhr.upload.onprogress = (e) => { if (e.lengthComputable) setProgress(Math.round(e.loaded / e.total * 100)); };
+        xhr.onload = () => xhr.status < 300 ? resolve() : reject(new Error(`Upload falhou: ${xhr.status}`));
+        xhr.onerror = () => reject(new Error("Erro de rede no upload"));
+        xhr.open("PUT", uploadURL);
+        xhr.setRequestHeader("Content-Type", file.type);
+        xhr.send(file);
+      });
+
+      onChange(`/api/storage${objectPath}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro no upload");
+    } finally {
+      setUploading(false);
+      setProgress(0);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <Input
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder="https://... ou faça upload abaixo"
+          className="flex-1 text-sm"
+        />
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="shrink-0"
+        >
+          {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Upload className="w-4 h-4 mr-1" />}
+          {uploading ? `${progress}%` : "Upload"}
+        </Button>
+        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && void handleFile(e.target.files[0])} />
+      </div>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      {value && (
+        <div className="relative group w-full h-24 rounded-lg overflow-hidden border border-border bg-muted">
+          <img src={value} alt="Preview" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ── LOGIN ──────────────────────────────────────────────────────────────────────
@@ -226,8 +306,11 @@ function HeroesTab({ token }: { token: string }) {
                 <Input value={editing.badge ?? ""} onChange={e => setEditing({ ...editing, badge: e.target.value })} />
               </div>
               <div className="space-y-1">
-                <Label>URL da Imagem de Fundo</Label>
-                <Input value={editing.imageUrl ?? ""} onChange={e => setEditing({ ...editing, imageUrl: e.target.value })} placeholder="https://..." />
+                <Label>Imagem de Fundo</Label>
+                <ImageUpload
+                  value={editing.imageUrl ?? ""}
+                  onChange={url => setEditing({ ...editing, imageUrl: url })}
+                />
               </div>
               <div className="space-y-1 md:col-span-2">
                 <Label>Título (parte normal)</Label>
