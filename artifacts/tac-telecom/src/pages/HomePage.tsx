@@ -41,6 +41,25 @@ type City = { id: number; name: string; state: string; active: boolean; order: n
 type GoogleReview = { authorName: string; authorPhoto: string; rating: number; text: string; relativeTime: string };
 type GoogleReviewsData = { configured: boolean; rating?: number; totalRatings?: number; reviews?: GoogleReview[]; writeReviewUrl?: string };
 
+// ── Site Logo ─────────────────────────────────────────────────────────────────
+function SiteLogo({ logoUrl, textSize = "text-2xl" }: { logoUrl?: string; textSize?: string }) {
+  return (
+    <div className="flex items-center gap-2.5">
+      {logoUrl && (
+        <img
+          src={logoUrl}
+          alt="Logo"
+          className="h-8 w-auto max-w-[120px] object-contain shrink-0"
+          style={{ filter: "brightness(0) invert(1)" }}
+        />
+      )}
+      <span className={`${textSize} font-black tracking-tighter text-primary`}>
+        TAC<span className="text-foreground">Telecom</span>
+      </span>
+    </div>
+  );
+}
+
 // ── Plan Card ────────────────────────────────────────────────────────────────
 function SpeedBadge({ speed, tab }: { speed: string; tab: string }) {
   if (tab === "tv") return <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-4"><span className="text-primary font-black text-xs leading-tight text-center">TAC<br/>TV</span></div>;
@@ -191,6 +210,7 @@ export default function HomePage() {
   const [cities, setCities] = useState<string[]>(STATIC_CITIES);
   const [reviewsData, setReviewsData] = useState<GoogleReviewsData | null>(null);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [logoUrl, setLogoUrl] = useState<string>("");
   const [coverageSubmitted, setCoverageSubmitted] = useState(false);
 
   useEffect(() => {
@@ -214,6 +234,11 @@ export default function HomePage() {
       .then((data: GoogleReviewsData | null) => setReviewsData(data))
       .catch(() => setReviewsData(null))
       .finally(() => setReviewsLoading(false));
+
+    fetch("/api/content/config")
+      .then(r => r.ok ? r.json() : {})
+      .then((cfg: Record<string, string>) => { if (cfg["logo_url"]) setLogoUrl(cfg["logo_url"]); })
+      .catch(() => {});
   }, []);
 
   const fibraPlans = plans.filter(p => p.tab === "fibra");
@@ -246,7 +271,7 @@ export default function HomePage() {
       {/* Nav */}
       <header className="sticky top-0 w-full z-40 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <span className="text-2xl font-black tracking-tighter text-primary">TAC<span className="text-foreground">Telecom</span></span>
+          <SiteLogo logoUrl={logoUrl} />
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
             <a href="#planos" className="text-muted-foreground hover:text-primary transition-colors">Planos</a>
             <a href="#cobertura" className="text-muted-foreground hover:text-primary transition-colors">Cobertura</a>
@@ -503,7 +528,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
             <div>
-              <span className="text-2xl font-black tracking-tighter text-primary mb-6 block">TAC<span className="text-foreground">Telecom</span></span>
+              <div className="mb-6"><SiteLogo logoUrl={logoUrl} /></div>
               <div className="space-y-4">
                 <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors w-fit">
                   <MessageCircle className="w-5 h-5" /><span>(48) 3660-0800</span>
