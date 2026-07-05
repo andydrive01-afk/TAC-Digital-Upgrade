@@ -82,14 +82,14 @@ function authHeader(token: string) {
 }
 
 // ── IMAGE UPLOAD ──────────────────────────────────────────────────────────────
-function ImageUpload({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+function ImageUpload({ value, onChange, accept = "image/*" }: { value: string; onChange: (url: string) => void; accept?: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
 
   const handleFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) { setError("Selecione uma imagem (JPG, PNG, WebP)"); return; }
+    if (!file.type.startsWith("image/")) { setError("Selecione uma imagem válida"); return; }
     if (file.size > 10 * 1024 * 1024) { setError("Imagem muito grande (máximo 10MB)"); return; }
     setError("");
     setUploading(true);
@@ -144,7 +144,7 @@ function ImageUpload({ value, onChange }: { value: string; onChange: (url: strin
           {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Upload className="w-4 h-4 mr-1" />}
           {uploading ? `${progress}%` : "Upload"}
         </Button>
-        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && void handleFile(e.target.files[0])} />
+        <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={e => e.target.files?.[0] && void handleFile(e.target.files[0])} />
       </div>
       {error && <p className="text-xs text-destructive">{error}</p>}
       {value && (
@@ -158,6 +158,111 @@ function ImageUpload({ value, onChange }: { value: string; onChange: (url: strin
             <X className="w-3 h-3" />
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ── LOGO UPLOAD (com seletor de modo) ────────────────────────────────────────
+type LogoMode = "png" | "svg-file" | "svg-code";
+
+function decodeSvgDataUrl(dataUrl: string): string {
+  try {
+    const b64 = dataUrl.split(",")[1] ?? "";
+    return decodeURIComponent(escape(atob(b64)));
+  } catch {
+    return "";
+  }
+}
+
+function detectMode(value: string): LogoMode {
+  if (value.startsWith("data:image/svg")) return "svg-code";
+  if (value.toLowerCase().endsWith(".svg")) return "svg-file";
+  return "png";
+}
+
+function LogoUpload({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const [mode, setMode] = useState<LogoMode>(() => detectMode(value));
+  const [svgCode, setSvgCode] = useState<string>(() =>
+    value.startsWith("data:image/svg") ? decodeSvgDataUrl(value) : ""
+  );
+  const [svgError, setSvgError] = useState("");
+
+  const handleModeChange = (next: LogoMode) => {
+    setMode(next);
+    if (next === "svg-code") { onChange(""); setSvgCode(""); }
+    else { setSvgCode(""); setSvgError(""); }
+  };
+
+  const applySvg = (code: string) => {
+    setSvgCode(code);
+    setSvgError("");
+    if (!code.trim()) { onChange(""); return; }
+    try {
+      const isFull = /^\s*<svg[\s>]/i.test(code);
+      const wrapped = isFull
+        ? code.trim()
+        : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">${code.trim()}</svg>`;
+      const doc = new DOMParser().parseFromString(wrapped, "image/svg+xml");
+      if (doc.querySelector("parseerror")) throw new Error();
+      const encoded = btoa(unescape(encodeURIComponent(wrapped)));
+      onChange(`data:image/svg+xml;base64,${encoded}`);
+    } catch {
+      setSvgError("SVG inválido — verifique a sintaxe");
+    }
+  };
+
+  const MODES: { id: LogoMode; label: string }[] = [
+    { id: "png",      label: "PNG / JPG" },
+    { id: "svg-file", label: "SVG (arquivo)" },
+    { id: "svg-code", label: "SVG (código)" },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <div className="flex rounded-lg border border-border overflow-hidden text-xs font-medium">
+        {MODES.map(opt => (
+          <button
+            key={opt.id}
+            type="button"
+            onClick={() => handleModeChange(opt.id)}
+            className={`flex-1 py-2 transition-colors ${mode === opt.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
+      {mode === "svg-code" ? (
+        <div className="space-y-2">
+          <textarea
+            value={svgCode}
+            onChange={e => applySvg(e.target.value)}
+            rows={6}
+            placeholder={"Cole o SVG completo ou apenas os <path>:\n\n<path d=\"M12 2L2 7l10 5...\"/>\n\nOu SVG completo:\n<svg xmlns=\"...\" viewBox=\"0 0 200 60\">...</svg>"}
+            className="w-full p-3 text-xs font-mono rounded-md border border-input bg-background resize-y focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          {svgError && <p className="text-xs text-destructive">{svgError}</p>}
+          {value?.startsWith("data:image/svg") && !svgError && (
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Preview em fundo claro e escuro:</p>
+              <div className="flex gap-3 items-center">
+                <div className="flex-1 rounded-lg border border-border p-3 bg-white flex items-center justify-center h-14">
+                  <img src={value} alt="Logo preview (claro)" className="max-h-full max-w-full object-contain" />
+                </div>
+                <div className="flex-1 rounded-lg border border-border p-3 bg-zinc-900 flex items-center justify-center h-14">
+                  <img src={value} alt="Logo preview (escuro)" className="max-h-full max-w-full object-contain" style={{ filter: "brightness(0) invert(1)" }} />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <ImageUpload
+          value={value}
+          onChange={onChange}
+          accept={mode === "svg-file" ? "image/svg+xml" : "image/png,image/jpeg,image/webp"}
+        />
       )}
     </div>
   );
@@ -792,11 +897,11 @@ function ConfigTab({ token }: { token: string }) {
         <CardContent className="space-y-4">
           <div className="space-y-1">
             <Label>Logo do Site</Label>
-            <ImageUpload
+            <LogoUpload
               value={cfg["logo_url"] ?? ""}
               onChange={url => setCfg({ ...cfg, logo_url: url })}
             />
-            <p className="text-xs text-muted-foreground">Exibida no cabeçalho. Recomendado: PNG ou SVG transparente, pelo menos 200px de largura.</p>
+            <p className="text-xs text-muted-foreground">Exibida no cabeçalho. PNG/JPG, SVG por arquivo ou SVG colando o código diretamente.</p>
           </div>
           <div className="space-y-1">
             <Label>Favicon</Label>
