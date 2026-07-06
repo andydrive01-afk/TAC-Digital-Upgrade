@@ -89,10 +89,24 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
       if (match) results.push(match[1]);
     }
 
-    res.json({ ok: true, tables: results, message: "Banco de dados instalado com sucesso!" });
+    // Seed default data on first install (only inserts if tables are empty)
+    await seedDefaultData();
+
+    res.json({ ok: true, tables: results, message: "Banco instalado e dados padrão carregados!" });
   } catch (err) {
     req.log.error({ err }, "setup-db error");
     res.status(500).json({ error: String(err instanceof Error ? err.message : err) });
+  }
+});
+
+// ── DB STATUS ────────────────────────────────────────────────────────
+router.get("/admin/db-status", adminAuth, async (req, res) => {
+  try {
+    const [[rows]] = await pool.execute("SELECT COUNT(*) AS cnt FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('heroes','plans','coverage_cities','site_config','bonus_products')") as [[{ cnt: number }]];
+    const tableCount = Number(rows?.cnt ?? 0);
+    res.json({ ok: true, ready: tableCount === 5, tableCount });
+  } catch {
+    res.json({ ok: true, ready: false, tableCount: 0 });
   }
 });
 

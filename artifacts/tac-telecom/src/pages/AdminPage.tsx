@@ -991,27 +991,53 @@ function CitiesTab({ token }: { token: string }) {
 // ── CONFIG TAB ────────────────────────────────────────────────────────────────
 // ── SETUP DB CARD ─────────────────────────────────────────────────────────────
 function SetupDbCard({ token }: { token: string }) {
-  const [status, setStatus] = useState<"idle" | "running" | "ok" | "error">("idle");
-  const [msg, setMsg] = useState("");
+  const [status, setStatus] = useState<"checking" | "ready" | "not-ready" | "installing" | "error">("checking");
+  const [errMsg, setErrMsg] = useState("");
 
-  const run = async () => {
-    setStatus("running");
-    setMsg("");
+  useEffect(() => {
+    fetch(`${API}/admin/db-status`, { headers: authHeader(token) })
+      .then(r => r.json() as Promise<{ ok?: boolean; ready?: boolean }>)
+      .then(data => setStatus(data.ready ? "ready" : "not-ready"))
+      .catch(() => setStatus("not-ready"));
+  }, [token]);
+
+  const install = async () => {
+    setStatus("installing");
+    setErrMsg("");
     try {
       const res = await fetch(`${API}/admin/setup-db`, { method: "POST", headers: authHeader(token) });
-      const data = await res.json() as { ok?: boolean; message?: string; tables?: string[]; error?: string };
+      const data = await res.json() as { ok?: boolean; error?: string };
       if (res.ok && data.ok) {
-        setStatus("ok");
-        setMsg(data.message ?? `Tabelas criadas: ${(data.tables ?? []).join(", ")}`);
+        setStatus("ready");
       } else {
         setStatus("error");
-        setMsg(data.error ?? "Erro desconhecido");
+        setErrMsg(data.error ?? "Erro desconhecido");
       }
     } catch (e) {
       setStatus("error");
-      setMsg(String(e));
+      setErrMsg(String(e));
     }
   };
+
+  if (status === "checking") {
+    return (
+      <Card className="border-dashed">
+        <CardContent className="py-4 flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" /> Verificando banco de dados...
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (status === "ready") {
+    return (
+      <Card className="border-green-500/30 bg-green-500/5">
+        <CardContent className="py-4 flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium">
+          <Check className="w-4 h-4" /> Banco de dados configurado e funcionando
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="border-dashed">
@@ -1023,17 +1049,15 @@ function SetupDbCard({ token }: { token: string }) {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Cria todas as tabelas no banco de dados configurado em <code className="bg-muted px-1 rounded text-xs">DATABASE_URL</code>.
-          Use ao instalar o sistema em um VPS novo com MariaDB/MySQL. Seguro de rodar mais de uma vez — usa <code className="bg-muted px-1 rounded text-xs">IF NOT EXISTS</code>.
+          Cria todas as tabelas e popula os dados iniciais automaticamente. Seguro de rodar — usa <code className="bg-muted px-1 rounded text-xs">IF NOT EXISTS</code>.
         </p>
         <div className="flex items-center gap-3">
-          <Button size="sm" variant="outline" onClick={() => void run()} disabled={status === "running"}>
-            {status === "running"
+          <Button size="sm" variant="outline" onClick={() => void install()} disabled={status === "installing"}>
+            {status === "installing"
               ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Instalando...</>
-              : <><Monitor className="w-4 h-4 mr-2" />Instalar / Verificar Tabelas</>}
+              : <><Monitor className="w-4 h-4 mr-2" />Instalar Banco de Dados</>}
           </Button>
-          {status === "ok" && <span className="text-xs text-primary flex items-center gap-1"><Check className="w-3.5 h-3.5" />{msg}</span>}
-          {status === "error" && <span className="text-xs text-destructive">{msg}</span>}
+          {status === "error" && <span className="text-xs text-destructive">{errMsg}</span>}
         </div>
       </CardContent>
     </Card>
