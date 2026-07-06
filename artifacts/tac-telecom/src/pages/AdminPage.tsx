@@ -568,6 +568,102 @@ function HeroesTab({ token }: { token: string }) {
   );
 }
 
+// ── BONUS PICKER (drag-to-reorder) ────────────────────────────────────────────
+function BonusPicker({ all, selectedIds, onChange }: {
+  all: BonusProduct[];
+  selectedIds: number[];
+  onChange: (ids: number[]) => void;
+}) {
+  const dragId = React.useRef<number | null>(null);
+  const dragOver = React.useRef<number | null>(null);
+
+  const selected = selectedIds.map(id => all.find(b => b.id === id)).filter(Boolean) as BonusProduct[];
+  const available = all.filter(b => !selectedIds.includes(b.id));
+
+  const add = (id: number) => onChange([...selectedIds, id]);
+  const remove = (id: number) => onChange(selectedIds.filter(i => i !== id));
+
+  const onDragStart = (id: number) => { dragId.current = id; };
+  const onDragEnter = (id: number) => { dragOver.current = id; };
+  const onDrop = () => {
+    if (dragId.current === null || dragOver.current === null || dragId.current === dragOver.current) return;
+    const next = [...selectedIds];
+    const from = next.indexOf(dragId.current);
+    const to = next.indexOf(dragOver.current);
+    next.splice(from, 1);
+    next.splice(to, 0, dragId.current);
+    onChange(next);
+    dragId.current = null;
+    dragOver.current = null;
+  };
+
+  return (
+    <div className="space-y-3">
+      <Label className="block">Produtos brinde inclusos no plano</Label>
+
+      {/* Selected — draggable to reorder */}
+      {selected.length > 0 ? (
+        <div>
+          <p className="text-xs text-muted-foreground mb-1.5">Selecionados — arraste para reordenar, clique no × para remover</p>
+          <div className="flex flex-wrap gap-2">
+            {selected.map(b => (
+              <div
+                key={b.id}
+                draggable
+                onDragStart={() => onDragStart(b.id)}
+                onDragEnter={() => onDragEnter(b.id)}
+                onDragOver={e => e.preventDefault()}
+                onDrop={onDrop}
+                title={b.alt || b.name}
+                className="relative flex flex-col items-center gap-1 p-2 rounded-xl border border-primary bg-primary/10 text-xs cursor-grab active:cursor-grabbing select-none"
+              >
+                {b.imageUrl
+                  ? <img src={b.imageUrl} alt={b.name} className="w-10 h-10 rounded-full object-cover border border-primary/30 pointer-events-none" />
+                  : <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center"><ImageIcon className="w-4 h-4 text-muted-foreground" /></div>
+                }
+                <span className="max-w-[72px] truncate text-center leading-tight">{b.name}</span>
+                <button
+                  type="button"
+                  onClick={() => remove(b.id)}
+                  className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-destructive text-white flex items-center justify-center hover:bg-destructive/80"
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground italic">Nenhum brinde selecionado para este plano.</p>
+      )}
+
+      {/* Available — click to add */}
+      {available.length > 0 && (
+        <div>
+          <p className="text-xs text-muted-foreground mb-1.5">Disponíveis — clique para adicionar</p>
+          <div className="flex flex-wrap gap-2">
+            {available.map(b => (
+              <button
+                key={b.id}
+                type="button"
+                title={b.alt || b.name}
+                onClick={() => add(b.id)}
+                className="flex flex-col items-center gap-1 p-2 rounded-xl border border-border bg-card text-xs hover:border-primary/50 transition-colors"
+              >
+                {b.imageUrl
+                  ? <img src={b.imageUrl} alt={b.name} className="w-10 h-10 rounded-full object-cover border border-border" />
+                  : <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center"><ImageIcon className="w-4 h-4 text-muted-foreground" /></div>
+                }
+                <span className="max-w-[72px] truncate text-center leading-tight">{b.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── PLANS TAB ─────────────────────────────────────────────────────────────────
 function PlansTab({ token }: { token: string }) {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -748,35 +844,11 @@ function PlansTab({ token }: { token: string }) {
             </div>
 
             {/* Bonus Products Picker */}
-            {bonusProducts.length > 0 && (
-              <div>
-                <Label className="block mb-2">Produtos brinde inclusos no plano</Label>
-                <div className="flex flex-wrap gap-2">
-                  {bonusProducts.filter(b => b.active).map(b => {
-                    const selected = (editing.bonusIds ?? []).includes(b.id);
-                    return (
-                      <button
-                        key={b.id}
-                        type="button"
-                        title={b.alt || b.name}
-                        onClick={() => toggleBonus(b.id)}
-                        className={`relative flex flex-col items-center gap-1 p-2 rounded-xl border text-xs transition-all ${selected ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/50"}`}
-                      >
-                        {b.imageUrl
-                          ? <img src={b.imageUrl} alt={b.alt || b.name} className="w-10 h-10 rounded-full object-cover border border-border" />
-                          : <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center"><ImageIcon className="w-4 h-4 text-muted-foreground" /></div>
-                        }
-                        <span className="max-w-[72px] truncate text-center leading-tight">{b.name}</span>
-                        {selected && <Check className="w-3 h-3 absolute top-1 right-1 text-primary" />}
-                      </button>
-                    );
-                  })}
-                </div>
-                {bonusProducts.filter(b => b.active).length === 0 && (
-                  <p className="text-xs text-muted-foreground">Nenhum produto ativo. Crie produtos na aba "Brindes".</p>
-                )}
-              </div>
-            )}
+            <BonusPicker
+              all={bonusProducts.filter(b => b.active)}
+              selectedIds={editing.bonusIds ?? []}
+              onChange={ids => setEditing({ ...editing, bonusIds: ids })}
+            />
             {bonusProducts.length === 0 && (
               <p className="text-xs text-muted-foreground">Crie produtos brinde na aba <strong>Brindes</strong> para vinculá-los aqui.</p>
             )}
