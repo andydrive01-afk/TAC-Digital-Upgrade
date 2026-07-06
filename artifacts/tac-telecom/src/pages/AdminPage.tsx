@@ -989,6 +989,57 @@ function CitiesTab({ token }: { token: string }) {
 }
 
 // ── CONFIG TAB ────────────────────────────────────────────────────────────────
+// ── SETUP DB CARD ─────────────────────────────────────────────────────────────
+function SetupDbCard({ token }: { token: string }) {
+  const [status, setStatus] = useState<"idle" | "running" | "ok" | "error">("idle");
+  const [msg, setMsg] = useState("");
+
+  const run = async () => {
+    setStatus("running");
+    setMsg("");
+    try {
+      const res = await fetch(`${API}/admin/setup-db`, { method: "POST", headers: authHeader(token) });
+      const data = await res.json() as { ok?: boolean; message?: string; tables?: string[]; error?: string };
+      if (res.ok && data.ok) {
+        setStatus("ok");
+        setMsg(data.message ?? `Tabelas criadas: ${(data.tables ?? []).join(", ")}`);
+      } else {
+        setStatus("error");
+        setMsg(data.error ?? "Erro desconhecido");
+      }
+    } catch (e) {
+      setStatus("error");
+      setMsg(String(e));
+    }
+  };
+
+  return (
+    <Card className="border-dashed">
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Monitor className="w-4 h-4 text-primary" />
+          Instalar Banco de Dados (MariaDB / MySQL)
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Cria todas as tabelas no banco de dados configurado em <code className="bg-muted px-1 rounded text-xs">DATABASE_URL</code>.
+          Use ao instalar o sistema em um VPS novo com MariaDB/MySQL. Seguro de rodar mais de uma vez — usa <code className="bg-muted px-1 rounded text-xs">IF NOT EXISTS</code>.
+        </p>
+        <div className="flex items-center gap-3">
+          <Button size="sm" variant="outline" onClick={() => void run()} disabled={status === "running"}>
+            {status === "running"
+              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Instalando...</>
+              : <><Monitor className="w-4 h-4 mr-2" />Instalar / Verificar Tabelas</>}
+          </Button>
+          {status === "ok" && <span className="text-xs text-primary flex items-center gap-1"><Check className="w-3.5 h-3.5" />{msg}</span>}
+          {status === "error" && <span className="text-xs text-destructive">{msg}</span>}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ConfigTab({ token }: { token: string }) {
   const [cfg, setCfg] = useState<Config>({});
   const [loading, setLoading] = useState(true);
@@ -1082,6 +1133,8 @@ function ConfigTab({ token }: { token: string }) {
           </div>
         </CardContent>
       </Card>
+
+      <SetupDbCard token={token} />
 
       <Button onClick={() => void save()} disabled={saving}>
         {saved ? <><Check className="w-4 h-4 mr-2" />Salvo!</> : <><Save className="w-4 h-4 mr-2" />{saving ? "Salvando..." : "Salvar Configurações"}</>}
