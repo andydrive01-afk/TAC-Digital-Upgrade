@@ -102,8 +102,8 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
 // ── DB STATUS ────────────────────────────────────────────────────────
 router.get("/admin/db-status", adminAuth, async (req, res) => {
   try {
-    const [[rows]] = await pool.execute("SELECT COUNT(*) AS cnt FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('heroes','plans','coverage_cities','site_config','bonus_products')") as [[{ cnt: number }]];
-    const tableCount = Number(rows?.cnt ?? 0);
+    const [rows] = await pool.execute("SELECT COUNT(*) AS cnt FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('heroes','plans','coverage_cities','site_config','bonus_products')") as unknown as [{ cnt: number }[]];
+    const tableCount = Number(rows?.[0]?.cnt ?? 0);
     res.json({ ok: true, ready: tableCount === 5, tableCount });
   } catch {
     res.json({ ok: true, ready: false, tableCount: 0 });

@@ -1,0 +1,2 @@
+- [MySQL local no Replit](mysql-local-replit.md) — MariaDB quebra no sandbox; use MySQL 8.0 (Nix `mysql80`) e nunca `DATABASE_URL` (reservada p/ Postgres do Replit)
+- [Storage local em vez de GCS](local-object-storage.md) — para apps que serão self-hosted, trocar Object Storage do Replit por disco local; cuidado com `import.meta.dirname` em bundles esbuild
