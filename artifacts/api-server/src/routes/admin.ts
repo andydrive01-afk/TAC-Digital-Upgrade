@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { heroes, plans, coverageCities, siteConfig } from "@workspace/db";
+import { heroes, plans, coverageCities, siteConfig, bonusProducts } from "@workspace/db";
 import { eq, asc } from "drizzle-orm";
 import { adminAuth } from "../middlewares/adminAuth.js";
 import { seedDefaultData } from "../lib/seed.js";
@@ -118,6 +118,40 @@ router.delete("/admin/cities/:id", adminAuth, async (req, res) => {
   try {
     const id = Number(req.params["id"]);
     await db.delete(coverageCities).where(eq(coverageCities.id, id));
+    res.status(204).end();
+  } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
+});
+
+// ── BONUS PRODUCTS ───────────────────────────────────────────────────
+router.get("/admin/bonus-products", adminAuth, async (req, res) => {
+  try {
+    const rows = await db.select().from(bonusProducts).orderBy(asc(bonusProducts.order), asc(bonusProducts.id));
+    res.json(rows);
+  } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
+});
+
+router.post("/admin/bonus-products", adminAuth, async (req, res) => {
+  try {
+    const body = req.body as typeof bonusProducts.$inferInsert;
+    const [row] = await db.insert(bonusProducts).values(body).returning();
+    res.status(201).json(row);
+  } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
+});
+
+router.put("/admin/bonus-products/:id", adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params["id"]);
+    const body = req.body as Partial<typeof bonusProducts.$inferInsert>;
+    const [row] = await db.update(bonusProducts).set(body).where(eq(bonusProducts.id, id)).returning();
+    if (!row) { res.status(404).json({ error: "Não encontrado" }); return; }
+    res.json(row);
+  } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
+});
+
+router.delete("/admin/bonus-products/:id", adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params["id"]);
+    await db.delete(bonusProducts).where(eq(bonusProducts.id, id));
     res.status(204).end();
   } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
 });

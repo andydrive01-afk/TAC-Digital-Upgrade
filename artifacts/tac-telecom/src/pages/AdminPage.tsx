@@ -62,7 +62,17 @@ type Plan = {
   isFeatured: boolean;
   icons: string[];
   features: string[];
+  bonusIds: number[];
   planKey: string;
+  order: number;
+  active: boolean;
+};
+
+type BonusProduct = {
+  id: number;
+  name: string;
+  imageUrl: string;
+  alt: string;
   order: number;
   active: boolean;
 };
@@ -561,6 +571,7 @@ function HeroesTab({ token }: { token: string }) {
 // ── PLANS TAB ─────────────────────────────────────────────────────────────────
 function PlansTab({ token }: { token: string }) {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [bonusProducts, setBonusProducts] = useState<BonusProduct[]>([]);
   const [tab, setTab] = useState<"fibra" | "tv">("fibra");
   const [editing, setEditing] = useState<Partial<Plan> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -569,8 +580,12 @@ function PlansTab({ token }: { token: string }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`${API}/admin/plans`, { headers: authHeader(token) });
-    if (res.ok) setPlans(await res.json() as Plan[]);
+    const [plansRes, bonusRes] = await Promise.all([
+      fetch(`${API}/admin/plans`, { headers: authHeader(token) }),
+      fetch(`${API}/admin/bonus-products`, { headers: authHeader(token) }),
+    ]);
+    if (plansRes.ok) setPlans(await plansRes.json() as Plan[]);
+    if (bonusRes.ok) setBonusProducts(await bonusRes.json() as BonusProduct[]);
     setLoading(false);
   }, [token]);
 
@@ -619,8 +634,14 @@ function PlansTab({ token }: { token: string }) {
     setEditing({ ...editing, features: (editing.features ?? []).filter((_, i) => i !== idx) });
   };
 
+  const toggleBonus = (id: number) => {
+    if (!editing) return;
+    const ids = editing.bonusIds ?? [];
+    setEditing({ ...editing, bonusIds: ids.includes(id) ? ids.filter(i => i !== id) : [...ids, id] });
+  };
+
   const visible = plans.filter(p => p.tab === tab);
-  const blank: Partial<Plan> = { tab, name: "", speed: "", price: "", priceCents: "90", badge: "", isFeatured: false, icons: [], features: [], planKey: "", order: visible.length, active: true };
+  const blank: Partial<Plan> = { tab, name: "", speed: "", price: "", priceCents: "90", badge: "", isFeatured: false, icons: [], features: [], bonusIds: [], planKey: "", order: visible.length, active: true };
 
   if (loading) return <p className="text-muted-foreground py-8 text-center">Carregando planos...</p>;
 
@@ -725,6 +746,40 @@ function PlansTab({ token }: { token: string }) {
                 </Button>
               </div>
             </div>
+
+            {/* Bonus Products Picker */}
+            {bonusProducts.length > 0 && (
+              <div>
+                <Label className="block mb-2">Produtos brinde inclusos no plano</Label>
+                <div className="flex flex-wrap gap-2">
+                  {bonusProducts.filter(b => b.active).map(b => {
+                    const selected = (editing.bonusIds ?? []).includes(b.id);
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        title={b.alt || b.name}
+                        onClick={() => toggleBonus(b.id)}
+                        className={`relative flex flex-col items-center gap-1 p-2 rounded-xl border text-xs transition-all ${selected ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/50"}`}
+                      >
+                        {b.imageUrl
+                          ? <img src={b.imageUrl} alt={b.alt || b.name} className="w-10 h-10 rounded-full object-cover border border-border" />
+                          : <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center"><ImageIcon className="w-4 h-4 text-muted-foreground" /></div>
+                        }
+                        <span className="max-w-[72px] truncate text-center leading-tight">{b.name}</span>
+                        {selected && <Check className="w-3 h-3 absolute top-1 right-1 text-primary" />}
+                      </button>
+                    );
+                  })}
+                </div>
+                {bonusProducts.filter(b => b.active).length === 0 && (
+                  <p className="text-xs text-muted-foreground">Nenhum produto ativo. Crie produtos na aba "Brindes".</p>
+                )}
+              </div>
+            )}
+            {bonusProducts.length === 0 && (
+              <p className="text-xs text-muted-foreground">Crie produtos brinde na aba <strong>Brindes</strong> para vinculá-los aqui.</p>
+            )}
 
             <div className="flex gap-2 pt-2">
               <Button size="sm" onClick={() => void save()} disabled={saving}>
@@ -963,10 +1018,145 @@ function ConfigTab({ token }: { token: string }) {
   );
 }
 
+// ── BONUS PRODUCTS TAB ────────────────────────────────────────────────────────
+function BonusProductsTab({ token }: { token: string }) {
+  const [products, setProducts] = useState<BonusProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Partial<BonusProduct> | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch(`${API}/admin/bonus-products`, { headers: authHeader(token) });
+    if (res.ok) setProducts(await res.json() as BonusProduct[]);
+    setLoading(false);
+  }, [token]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const save = async () => {
+    if (!editing) return;
+    setSaving(true);
+    const isNew = !editing.id;
+    const url = isNew ? `${API}/admin/bonus-products` : `${API}/admin/bonus-products/${editing.id}`;
+    await fetch(url, { method: isNew ? "POST" : "PUT", headers: authHeader(token), body: JSON.stringify(editing) });
+    setSaving(false);
+    setEditing(null);
+    await load();
+  };
+
+  const del = async (id: number) => {
+    if (!confirm("Deletar este produto brinde?")) return;
+    await fetch(`${API}/admin/bonus-products/${id}`, { method: "DELETE", headers: authHeader(token) });
+    await load();
+  };
+
+  const toggle = async (p: BonusProduct) => {
+    await fetch(`${API}/admin/bonus-products/${p.id}`, {
+      method: "PUT", headers: authHeader(token),
+      body: JSON.stringify({ active: !p.active }),
+    });
+    await load();
+  };
+
+  const blank: Partial<BonusProduct> = { name: "", imageUrl: "", alt: "", order: products.length, active: true };
+
+  if (loading) return <p className="text-muted-foreground py-8 text-center">Carregando...</p>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-semibold">Produtos Brinde</h2>
+          <p className="text-sm text-muted-foreground">TAC Música, TAC TV, Looke, etc. — aparecem como ícones redondos nos planos.</p>
+        </div>
+        <Button size="sm" onClick={() => setEditing(blank)}>
+          <Plus className="w-4 h-4 mr-2" />Novo Produto
+        </Button>
+      </div>
+
+      {editing && (
+        <Card className="border-primary">
+          <CardHeader><CardTitle className="text-base">{editing.id ? "Editar Produto" : "Novo Produto"}</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label>Nome do produto</Label>
+                  <Input value={editing.name ?? ""} onChange={e => setEditing({ ...editing, name: e.target.value })} placeholder="Ex: TAC Música" />
+                </div>
+                <div className="space-y-1">
+                  <Label>Texto ao passar o mouse (tooltip)</Label>
+                  <Input value={editing.alt ?? ""} onChange={e => setEditing({ ...editing, alt: e.target.value })} placeholder="Ex: TAC Música incluso" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label>Ícone do produto</Label>
+                <ImageUpload value={editing.imageUrl ?? ""} onChange={url => setEditing({ ...editing, imageUrl: url })} />
+                <p className="text-xs text-muted-foreground">PNG ou SVG. Será exibido redondo no card do plano.</p>
+              </div>
+            </div>
+            {editing.imageUrl && (
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">Preview:</span>
+                <img src={editing.imageUrl} alt={editing.alt ?? editing.name} title={editing.alt ?? editing.name}
+                  className="w-12 h-12 rounded-full object-cover border border-border bg-muted" />
+                <span className="text-xs text-muted-foreground italic">{editing.alt || editing.name}</span>
+              </div>
+            )}
+            <div className="flex gap-2 pt-2">
+              <Button size="sm" onClick={() => void save()} disabled={saving}>
+                <Save className="w-4 h-4 mr-2" />{saving ? "Salvando..." : "Salvar"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
+                <X className="w-4 h-4 mr-2" />Cancelar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        {products.length === 0 && (
+          <p className="text-muted-foreground text-center py-8 col-span-full">
+            Nenhum produto cadastrado. Crie produtos aqui e depois vincule-os aos planos.
+          </p>
+        )}
+        {products.map(p => (
+          <Card key={p.id} className={!p.active ? "opacity-50" : ""}>
+            <CardContent className="py-3 px-3 flex items-center gap-3">
+              {p.imageUrl
+                ? <img src={p.imageUrl} alt={p.alt || p.name} title={p.alt || p.name} className="w-10 h-10 rounded-full object-cover border border-border shrink-0" />
+                : <div className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center shrink-0"><ImageIcon className="w-4 h-4 text-muted-foreground" /></div>
+              }
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{p.name}</p>
+                {p.alt && <p className="text-xs text-muted-foreground truncate">{p.alt}</p>}
+              </div>
+              <div className="flex gap-1 shrink-0">
+                <Button size="icon" variant="ghost" className="w-7 h-7" onClick={() => toggle(p)}>
+                  {p.active ? <Eye className="w-3.5 h-3.5 text-primary" /> : <EyeOff className="w-3.5 h-3.5" />}
+                </Button>
+                <Button size="icon" variant="ghost" className="w-7 h-7" onClick={() => setEditing(p)}>
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
+                <Button size="icon" variant="ghost" className="w-7 h-7 text-destructive hover:text-destructive" onClick={() => void del(p.id)}>
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── MAIN ADMIN PAGE ───────────────────────────────────────────────────────────
 const TABS = [
   { id: "heroes",   label: "Hero / Slideshow", icon: <Layers className="w-4 h-4" /> },
   { id: "plans",    label: "Planos",            icon: <LayoutList className="w-4 h-4" /> },
+  { id: "brindes",  label: "Brindes",           icon: <ImageIcon className="w-4 h-4" /> },
   { id: "cities",   label: "Cobertura",         icon: <MapPin className="w-4 h-4" /> },
   { id: "config",   label: "Configurações",     icon: <Settings className="w-4 h-4" /> },
 ] as const;
@@ -1032,6 +1222,7 @@ export default function AdminPage() {
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         {activeTab === "heroes" && <HeroesTab token={token} />}
         {activeTab === "plans" && <PlansTab token={token} />}
+        {activeTab === "brindes" && <BonusProductsTab token={token} />}
         {activeTab === "cities" && <CitiesTab token={token} />}
         {activeTab === "config" && <ConfigTab token={token} />}
       </main>

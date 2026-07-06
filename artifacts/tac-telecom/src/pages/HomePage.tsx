@@ -35,8 +35,10 @@ type Hero = {
 type Plan = {
   id: number; tab: string; name: string; speed: string; price: string;
   priceCents: string; badge: string; isFeatured: boolean; icons: string[];
-  features: string[]; planKey: string; order: number; active: boolean;
+  features: string[]; bonusIds: number[]; planKey: string; order: number; active: boolean;
 };
+
+type BonusProduct = { id: number; name: string; imageUrl: string; alt: string; };
 type City = { id: number; name: string; state: string; active: boolean; order: number };
 type GoogleReview = { authorName: string; authorPhoto: string; rating: number; text: string; relativeTime: string };
 type GoogleReviewsData = { configured: boolean; rating?: number; totalRatings?: number; reviews?: GoogleReview[]; writeReviewUrl?: string };
@@ -71,8 +73,9 @@ function SpeedBadge({ speed, tab }: { speed: string; tab: string }) {
   );
 }
 
-function PlanCard({ plan }: { plan: Plan }) {
+function PlanCard({ plan, bonusMap }: { plan: Plan; bonusMap: Map<number, BonusProduct> }) {
   const featured = plan.isFeatured;
+  const bonuses = (plan.bonusIds ?? []).map(id => bonusMap.get(id)).filter(Boolean) as BonusProduct[];
   return (
     <Card className={`h-full flex flex-col relative overflow-hidden transition-colors ${
       featured ? "bg-card border-primary shadow-[0_0_30px_rgba(22,163,74,0.15)]" : "bg-card border-border/50 hover:border-primary/50"
@@ -96,6 +99,22 @@ function PlanCard({ plan }: { plan: Plan }) {
             </li>
           ))}
         </ul>
+        {bonuses.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-border/50">
+            <p className="text-xs text-muted-foreground mb-2">Incluso no plano</p>
+            <div className="flex flex-wrap gap-2">
+              {bonuses.map(b => (
+                <img
+                  key={b.id}
+                  src={b.imageUrl}
+                  alt={b.alt || b.name}
+                  title={b.alt || b.name}
+                  className="w-10 h-10 rounded-full object-cover border border-border bg-muted"
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
       <CardFooter>
         <Button className={`w-full ${featured ? "text-base h-12" : ""}`} asChild data-testid={`button-contratar-${plan.planKey}`}>
@@ -212,6 +231,7 @@ export default function HomePage() {
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [logoUrl, setLogoUrl] = useState<string>("");
   const [faviconUrl, setFaviconUrl] = useState<string>("");
+  const [bonusMap, setBonusMap] = useState<Map<number, BonusProduct>>(new Map());
   const [coverageSubmitted, setCoverageSubmitted] = useState(false);
 
   useEffect(() => {
@@ -241,6 +261,15 @@ export default function HomePage() {
       .then((cfg: Record<string, string>) => {
         if (cfg["logo_url"]) setLogoUrl(cfg["logo_url"]);
         if (cfg["favicon_url"]) setFaviconUrl(cfg["favicon_url"]);
+      })
+      .catch(() => {});
+
+    fetch("/api/content/bonus-products")
+      .then(r => r.ok ? r.json() : [])
+      .then((data: BonusProduct[]) => {
+        const m = new Map<number, BonusProduct>();
+        data.forEach(b => m.set(b.id, b));
+        setBonusMap(m);
       })
       .catch(() => {});
   }, []);
@@ -372,7 +401,7 @@ export default function HomePage() {
               >
                 {visiblePlans.map(plan => (
                   <motion.div key={plan.id} variants={itemVariants} className={plan.isFeatured ? "lg:-mt-4 lg:mb-4 z-10" : ""}>
-                    <PlanCard plan={plan} />
+                    <PlanCard plan={plan} bonusMap={bonusMap} />
                   </motion.div>
                 ))}
               </motion.div>

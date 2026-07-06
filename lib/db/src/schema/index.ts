@@ -22,6 +22,21 @@ export const SelectHero = createSelectSchema(heroes);
 export type Hero = typeof heroes.$inferSelect;
 export type InsertHeroType = typeof heroes.$inferInsert;
 
+export const bonusProducts = pgTable("bonus_products", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  imageUrl: text("image_url").notNull().default(""),
+  alt: text("alt").notNull().default(""),
+  order: integer("order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const InsertBonusProduct = createInsertSchema(bonusProducts);
+export const SelectBonusProduct = createSelectSchema(bonusProducts);
+export type BonusProduct = typeof bonusProducts.$inferSelect;
+export type InsertBonusProductType = typeof bonusProducts.$inferInsert;
+
 export const plans = pgTable("plans", {
   id: serial("id").primaryKey(),
   tab: text("tab").notNull().default("fibra"),
@@ -33,6 +48,7 @@ export const plans = pgTable("plans", {
   isFeatured: boolean("is_featured").notNull().default(false),
   icons: jsonb("icons").$type<string[]>().notNull().default([]),
   features: jsonb("features").$type<string[]>().notNull().default([]),
+  bonusIds: jsonb("bonus_ids").$type<number[]>().notNull().default([]),
   planKey: text("plan_key").notNull().unique(),
   order: integer("order").notNull().default(0),
   active: boolean("active").notNull().default(true),
