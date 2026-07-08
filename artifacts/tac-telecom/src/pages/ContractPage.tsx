@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Check, ChevronRight, ChevronLeft, MapPin, User,
   ClipboardList, MessageCircle, Calendar, Clock, UserPlus, X,
-  Locate, Loader2, Navigation
+  Locate, Loader2, Navigation, Tv, Phone, Wifi, Plus, Minus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,22 +26,12 @@ type ApiPlan = {
   isFeatured: boolean;
 };
 
-// Fallback labels (used if API fails to load)
-const PLANS: Record<string, string> = {
-  "fibra400": "Fibra 400 Mega — R$ 89,90/mês",
-  "fibra600": "Fibra 600 Mega — R$ 99,90/mês",
-  "fibra800": "Fibra 800 Mega — R$ 109,90/mês",
-  "fibra1g": "Fibra 1 Giga — R$ 119,90/mês",
-  "tv400": "TAC TV Essencial + 400 Mega — R$ 119,90/mês",
-  "tv600": "TAC TV Plus + 600 Mega — R$ 139,90/mês",
-  "tv1g": "TAC TV Premium + 1 Giga — R$ 169,90/mês",
-};
-
-const PLAN_TAB_LABELS: Record<string, string> = {
-  fibra: "🌐 Fibra Óptica",
-  tv: "📺 TAC TV",
-  telefone: "📞 Telefone",
-  "tv+telefone": "📺📞 TV+Telefone",
+// Fallback internet plan labels (used if API fails to load)
+const FALLBACK_PLANS: Record<string, string> = {
+  "fibra400": "Fibra 400 Mega",
+  "fibra600": "Fibra 600 Mega",
+  "fibra800": "Fibra 800 Mega",
+  "fibra1g": "Fibra 1 Giga",
 };
 
 const CITIES = [
@@ -77,6 +67,8 @@ const stepVariants = {
   exit: (dir: number) => ({ opacity: 0, x: dir > 0 ? -40 : 40, transition: { duration: 0.2 } }),
 };
 
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
 function formatCpf(val: string): string {
   const d = val.replace(/\D/g, "").slice(0, 11);
   if (d.length <= 3) return d;
@@ -111,16 +103,29 @@ function formatCep(val: string) {
   return d.length <= 5 ? d : `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
+/** Calculates total price for qty units of a plan and formats as "R$ X,XX/mês" */
+function calcPriceDisplay(plan: ApiPlan, qty: number): string {
+  const totalCents = (parseInt(plan.price || "0") * 100 + parseInt(plan.priceCents || "0")) * qty;
+  const reais = Math.floor(totalCents / 100);
+  const cents = (totalCents % 100).toString().padStart(2, "0");
+  return `R$ ${reais},${cents}/mês`;
+}
+
+/** Single plan price display */
+function planPriceDisplay(plan: ApiPlan): string {
+  return `R$ ${plan.price},${plan.priceCents}/mês`;
+}
+
 const WEEKDAY_NAMES = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const MONTH_NAMES = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
 
 function getAvailableDays(count = 12): { iso: string; label: string; short: string; weekday: string }[] {
   const days = [];
   const d = new Date();
-  d.setDate(d.getDate() + 1); // start from tomorrow
+  d.setDate(d.getDate() + 1);
   while (days.length < count) {
     const dow = d.getDay();
-    if (dow !== 0) { // skip Sundays
+    if (dow !== 0) {
       const iso = d.toISOString().slice(0, 10);
       const label = `${d.getDate()} de ${MONTH_NAMES[d.getMonth()]}`;
       const short = String(d.getDate()).padStart(2, "0");
@@ -131,6 +136,8 @@ function getAvailableDays(count = 12): { iso: string; label: string; short: stri
   }
   return days;
 }
+
+// ── Sub-components ─────────────────────────────────────────────────────────────
 
 function SectionHeader({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle: string }) {
   return (
@@ -167,6 +174,81 @@ function NavRow({ onBack, onNext, nextLabel = "Próximo", nextDisabled = false, 
   );
 }
 
+/** Horizontal scrollable plan card row */
+function PlanCardRow({ plans, selectedKey, onSelect }: {
+  plans: ApiPlan[];
+  selectedKey: string | null;
+  onSelect: (key: string) => void;
+}) {
+  if (plans.length === 0) {
+    return <p className="text-xs text-muted-foreground italic py-1">Nenhum plano disponível.</p>;
+  }
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+      {plans.map(plan => {
+        const selected = selectedKey === plan.planKey;
+        return (
+          <button
+            key={plan.planKey}
+            type="button"
+            onClick={() => onSelect(plan.planKey)}
+            className={`flex-none w-44 text-left px-3 py-3 rounded-xl border transition-all duration-150 ${
+              selected
+                ? "border-primary bg-primary/10 shadow-[0_0_10px_rgba(22,163,74,0.18)]"
+                : "border-border bg-card hover:border-primary/40 hover:bg-muted/30"
+            }`}
+          >
+            <div className="flex items-start justify-between gap-1 mb-1">
+              <p className="text-sm font-semibold leading-tight">{plan.name}</p>
+              {selected && <Check className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />}
+            </div>
+            {plan.speed ? (
+              <p className="text-xs text-muted-foreground mb-2">{plan.speed} Mbps</p>
+            ) : null}
+            <p className="text-base font-black text-primary leading-none">
+              R$ {plan.price},{plan.priceCents}
+            </p>
+            <p className="text-xs text-muted-foreground">/mês {plan.tab !== "fibra" ? "por unid." : ""}</p>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Counter for points / lines */
+function Counter({ value, min, max, onChange, label }: {
+  value: number; min: number; max: number;
+  onChange: (v: number) => void; label: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onChange(Math.max(min, value - 1))}
+          disabled={value <= min}
+          className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary/50 hover:bg-muted/40 disabled:opacity-40 transition-all"
+        >
+          <Minus className="w-3.5 h-3.5" />
+        </button>
+        <span className="w-6 text-center font-black text-lg leading-none">{value}</span>
+        <button
+          type="button"
+          onClick={() => onChange(Math.min(max, value + 1))}
+          disabled={value >= max}
+          className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:border-primary/50 hover:bg-muted/40 disabled:opacity-40 transition-all"
+        >
+          <Plus className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
+
 export default function ContractPage() {
   const [, setLocation] = useLocation();
   const search = useSearch();
@@ -177,41 +259,89 @@ export default function ContractPage() {
   const [dir, setDir] = useState(1);
   const [sent, setSent] = useState(false);
 
-  // Plan selector
+  // ── Plan selection state ─────────────────────────────────
   const [apiPlans, setApiPlans] = useState<ApiPlan[]>([]);
-  const [selectedPlanKey, setSelectedPlanKey] = useState(planoKey);
-  const [planSelectorOpen, setPlanSelectorOpen] = useState(false);
-  const [planTab, setPlanTab] = useState("fibra");
+
+  // Internet (always required)
+  const [selectedInternetKey, setSelectedInternetKey] = useState<string>(planoKey);
+
+  // TV add-on (optional)
+  const [tvEnabled, setTvEnabled] = useState(false);
+  const [selectedTvKey, setSelectedTvKey] = useState<string | null>(null);
+  const [tvPontos, setTvPontos] = useState(1);
+
+  // Telefone add-on (optional, up to 2 lines)
+  const [telefoneEnabled, setTelefoneEnabled] = useState(false);
+  const [selectedTelefoneKey, setSelectedTelefoneKey] = useState<string | null>(null);
+  const [telefoneLinhas, setTelefoneLinhas] = useState(1);
 
   useEffect(() => {
     fetch(`${API_BASE}/content/plans`)
       .then(r => r.json())
       .then((data: ApiPlan[]) => {
         setApiPlans(data);
-        const found = data.find(p => p.planKey === planoKey);
-        if (found) setPlanTab(found.tab);
+        const fibraPlans = data.filter((p: ApiPlan) => p.tab === "fibra");
+        // If current key is not a fibra plan, fall back to first fibra plan
+        setSelectedInternetKey(prev => {
+          const isValidFibra = fibraPlans.some((p: ApiPlan) => p.planKey === prev);
+          if (!isValidFibra && fibraPlans.length > 0) return fibraPlans[0].planKey;
+          return prev;
+        });
+        // Auto-select first plan for addons already enabled before load
+        setSelectedTvKey(prev => {
+          if (prev !== null) return prev;
+          const tvPlans = data.filter((p: ApiPlan) => p.tab === "tv");
+          return tvEnabled && tvPlans.length > 0 ? tvPlans[0].planKey : null;
+        });
+        setSelectedTelefoneKey(prev => {
+          if (prev !== null) return prev;
+          const telPlans = data.filter((p: ApiPlan) => p.tab === "telefone");
+          return telefoneEnabled && telPlans.length > 0 ? telPlans[0].planKey : null;
+        });
       })
       .catch(() => {});
-  }, [planoKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Keep selectedPlanKey in sync if the URL query param changes after mount
+  // Sync internet key if URL param changes after mount — only accept fibra keys
   useEffect(() => {
-    setSelectedPlanKey(planoKey);
-  }, [planoKey]);
+    setSelectedInternetKey(prev => {
+      // Will be validated against fibra plans on next plan load; for now accept as-is
+      // and rely on the load effect to correct non-fibra keys once plans are available
+      if (apiPlans.length === 0) return planoKey;
+      const fibraPlans = apiPlans.filter(p => p.tab === "fibra");
+      const isValidFibra = fibraPlans.some(p => p.planKey === planoKey);
+      if (isValidFibra) return planoKey;
+      return fibraPlans.length > 0 ? fibraPlans[0].planKey : prev;
+    });
+  }, [planoKey, apiPlans]);
 
-  const selectedPlan = apiPlans.find(p => p.planKey === selectedPlanKey);
-  const plansForTab = apiPlans.filter(p => p.tab === planTab);
-  const availableTabs = [...new Set(apiPlans.map(p => p.tab))];
+  // Derived plan lists
+  const internetPlans = apiPlans.filter(p => p.tab === "fibra");
+  const tvPlans = apiPlans.filter(p => p.tab === "tv");
+  const telefonePlans = apiPlans.filter(p => p.tab === "telefone");
 
-  // Display label (with price for UI)
-  const planDisplayLabel = selectedPlan
-    ? `${selectedPlan.name} — R$ ${selectedPlan.price},${selectedPlan.priceCents}/mês`
-    : (PLANS[selectedPlanKey] ?? PLANS["fibra1g"]);
-  // Name only (no price) — used in WhatsApp message
-  const planNameOnly = selectedPlan
-    ? selectedPlan.name
-    : (PLANS[selectedPlanKey] ?? PLANS["fibra1g"]).split(" — ")[0];
+  const selectedInternetPlan = apiPlans.find(p => p.planKey === selectedInternetKey);
+  const selectedTvPlan = tvPlans.find(p => p.planKey === selectedTvKey);
+  const selectedTelefonePlan = telefonePlans.find(p => p.planKey === selectedTelefoneKey);
 
+  // Auto-select first TV plan when enabling TV
+  const handleToggleTv = (enabled: boolean) => {
+    setTvEnabled(enabled);
+    if (enabled && !selectedTvKey && tvPlans.length > 0) {
+      setSelectedTvKey(tvPlans[0].planKey);
+    }
+  };
+
+  // Auto-select first telefone plan when enabling telefone
+  const handleToggleTelefone = (enabled: boolean) => {
+    setTelefoneEnabled(enabled);
+    if (enabled && !selectedTelefoneKey && telefonePlans.length > 0) {
+      setSelectedTelefoneKey(telefonePlans[0].planKey);
+    }
+  };
+
+  // ── GPS ─────────────────────────────────────────────────
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState("");
@@ -236,6 +366,7 @@ export default function ContractPage() {
     );
   };
 
+  // ── Form steps state ─────────────────────────────────────
   const [step1, setStep1] = useState<Step1Data>({
     nome: "", email: "", telefone: "", cpf: "",
     outroNome: "", outroTelefone: "", temOutro: false,
@@ -269,23 +400,40 @@ export default function ContractPage() {
   const selectedDay = availableDays.find(d => d.iso === step3.data);
   const selectedSlot = TIME_SLOTS.find(t => t.id === step3.turno);
 
+  // ── WA confirm ───────────────────────────────────────────
   const handleConfirm = () => {
+    // Plan name only — no prices in WA message
+    const internetName = selectedInternetPlan?.name ?? (FALLBACK_PLANS[selectedInternetKey] ?? selectedInternetKey);
+
     const lines = [
       `Olá! Quero contratar a TAC Telecom.`,
       ``,
-      `*Plano escolhido:* ${planNameOnly}`,
+      `*Planos contratados:*`,
+      `🌐 Internet: ${internetName}`,
+    ];
+
+    if (tvEnabled && selectedTvPlan) {
+      lines.push(`📺 TV: ${selectedTvPlan.name} — ${tvPontos} ponto${tvPontos > 1 ? "s" : ""}`);
+    }
+    if (telefoneEnabled && selectedTelefonePlan) {
+      lines.push(`📞 Telefone: ${selectedTelefonePlan.name} — ${telefoneLinhas} linha${telefoneLinhas > 1 ? "s" : ""}`);
+    }
+
+    lines.push(
       ``,
       `*Dados pessoais:*`,
       `Nome: ${step1.nome}`,
       `CPF: ${step1.cpf}`,
       `E-mail: ${step1.email}`,
       `Telefone: ${step1.telefone}`,
-    ];
+    );
+
     if (step1.temOutro && step1.outroNome) {
       lines.push(``, `*Outro contato para instalação:*`);
       lines.push(`Nome: ${step1.outroNome}`);
       lines.push(`Telefone: ${step1.outroTelefone}`);
     }
+
     lines.push(
       ``,
       `*Endereço de instalação:*`,
@@ -294,9 +442,11 @@ export default function ContractPage() {
       `Bairro: ${step2.bairro}`,
       `Cidade: ${step2.cidade} — ${step2.estado}`,
     );
+
     if (gpsCoords) {
       lines.push(`Localização precisa (GPS): https://maps.google.com/?q=${gpsCoords.lat},${gpsCoords.lng}`);
     }
+
     lines.push(
       ``,
       `*Data preferida para instalação:*`,
@@ -308,6 +458,7 @@ export default function ContractPage() {
     setSent(true);
   };
 
+  // ── Success screen ────────────────────────────────────────
   if (sent) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
@@ -335,6 +486,7 @@ export default function ContractPage() {
     );
   }
 
+  // ── Main render ──────────────────────────────────────────
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
@@ -349,72 +501,124 @@ export default function ContractPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
 
-          {/* Plan selector */}
-          <div className="mb-8">
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <span className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 rounded-full px-4 py-1.5 text-sm font-semibold">
-                <Check className="w-4 h-4" />
-                {planDisplayLabel}
-              </span>
-              <button
-                type="button"
-                onClick={() => setPlanSelectorOpen(o => !o)}
-                className="text-xs text-primary underline underline-offset-2 hover:text-primary/80 transition-colors font-medium"
-              >
-                {planSelectorOpen ? "Fechar" : "Trocar plano"}
-              </button>
+          {/* ── Plan selector ──────────────────────────────── */}
+          <div className="mb-8 bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+
+            {/* Internet (obrigatório) */}
+            <div className="p-4 border-b border-border/60">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Wifi className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-bold">Plano de Internet</span>
+                <span className="ml-auto text-xs text-primary font-semibold bg-primary/10 rounded-full px-2 py-0.5">Obrigatório</span>
+              </div>
+              <PlanCardRow
+                plans={internetPlans}
+                selectedKey={selectedInternetKey}
+                onSelect={setSelectedInternetKey}
+              />
+              {selectedInternetPlan && (
+                <p className="text-xs text-primary font-medium mt-2 flex items-center gap-1">
+                  <Check className="w-3 h-3" />
+                  {selectedInternetPlan.name} — {planPriceDisplay(selectedInternetPlan)}
+                </p>
+              )}
             </div>
 
-            {planSelectorOpen && apiPlans.length > 0 && (
-              <div className="mt-4 bg-card border border-border rounded-2xl shadow-lg p-4 space-y-3">
-                {/* Tab buttons */}
-                <div className="flex gap-2 flex-wrap">
-                  {availableTabs.map(t => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setPlanTab(t)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${planTab === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}
-                    >
-                      {PLAN_TAB_LABELS[t] ?? t}
-                    </button>
-                  ))}
+            {/* TV (opcional) */}
+            <div className={`p-4 border-b border-border/60 transition-colors ${tvEnabled ? "bg-primary/[0.03]" : ""}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${tvEnabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                  <Tv className="w-4 h-4" />
                 </div>
-                {/* Internet always included notice */}
-                {planTab !== "fibra" && (
-                  <p className="text-xs text-primary font-medium flex items-center gap-1.5">
-                    <Check className="w-3.5 h-3.5" />
-                    Internet Fibra sempre inclusa em todos os planos
-                  </p>
-                )}
-                {/* Plan cards */}
-                <div className="grid grid-cols-1 gap-2">
-                  {plansForTab.length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-2">Nenhum plano disponível nesta categoria.</p>
-                  )}
-                  {plansForTab.map(plan => (
-                    <button
-                      key={plan.planKey}
-                      type="button"
-                      onClick={() => { setSelectedPlanKey(plan.planKey); setPlanSelectorOpen(false); }}
-                      className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${selectedPlanKey === plan.planKey ? "border-primary bg-primary/10" : "border-border hover:border-primary/40 hover:bg-muted/30"}`}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold truncate">{plan.name}</p>
-                          {plan.speed && <p className="text-xs text-muted-foreground">{plan.speed} Mbps</p>}
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-base font-black text-primary">R$ {plan.price},{plan.priceCents}</p>
-                          <p className="text-xs text-muted-foreground">/mês</p>
-                        </div>
-                        {selectedPlanKey === plan.planKey && <Check className="w-4 h-4 text-primary shrink-0" />}
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                <span className="text-sm font-bold">TAC TV</span>
+                <span className="text-xs text-muted-foreground">(opcional)</span>
+                <button
+                  type="button"
+                  onClick={() => handleToggleTv(!tvEnabled)}
+                  className={`ml-auto flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
+                    tvEnabled
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                  }`}
+                >
+                  {tvEnabled ? <><Check className="w-3 h-3" /> Adicionado</> : <>+ Adicionar</>}
+                </button>
               </div>
-            )}
+
+              {tvEnabled && (
+                <div className="mt-3 space-y-3">
+                  <PlanCardRow
+                    plans={tvPlans}
+                    selectedKey={selectedTvKey}
+                    onSelect={setSelectedTvKey}
+                  />
+                  {selectedTvPlan && (
+                    <>
+                      <Counter
+                        value={tvPontos}
+                        min={1}
+                        max={10}
+                        onChange={setTvPontos}
+                        label="Pontos:"
+                      />
+                      <p className="text-xs text-primary font-medium flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        {selectedTvPlan.name} · {tvPontos} ponto{tvPontos > 1 ? "s" : ""} — {calcPriceDisplay(selectedTvPlan, tvPontos)}
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Telefone (opcional) */}
+            <div className={`p-4 transition-colors ${telefoneEnabled ? "bg-primary/[0.03]" : ""}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${telefoneEnabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                  <Phone className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-bold">Telefone Fixo</span>
+                <span className="text-xs text-muted-foreground">(opcional)</span>
+                <button
+                  type="button"
+                  onClick={() => handleToggleTelefone(!telefoneEnabled)}
+                  className={`ml-auto flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
+                    telefoneEnabled
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                  }`}
+                >
+                  {telefoneEnabled ? <><Check className="w-3 h-3" /> Adicionado</> : <>+ Adicionar</>}
+                </button>
+              </div>
+
+              {telefoneEnabled && (
+                <div className="mt-3 space-y-3">
+                  <PlanCardRow
+                    plans={telefonePlans}
+                    selectedKey={selectedTelefoneKey}
+                    onSelect={setSelectedTelefoneKey}
+                  />
+                  {selectedTelefonePlan && (
+                    <>
+                      <Counter
+                        value={telefoneLinhas}
+                        min={1}
+                        max={2}
+                        onChange={setTelefoneLinhas}
+                        label="Linhas:"
+                      />
+                      <p className="text-xs text-primary font-medium flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        {selectedTelefonePlan.name} · {telefoneLinhas} linha{telefoneLinhas > 1 ? "s" : ""} — {calcPriceDisplay(selectedTelefonePlan, telefoneLinhas)}
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Step indicator */}
@@ -458,6 +662,7 @@ export default function ContractPage() {
                       <Input id="nome" data-testid="input-nome" placeholder="Seu nome completo"
                         value={step1.nome} onChange={e => setStep1(p => ({ ...p, nome: e.target.value }))} className="h-12" />
                     </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="cpf">CPF</Label>
                       <Input
@@ -472,6 +677,7 @@ export default function ContractPage() {
                         <p className="text-xs text-destructive">CPF inválido. Verifique e tente novamente.</p>
                       )}
                     </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div className="space-y-2">
                         <Label htmlFor="email">E-mail</Label>
@@ -653,7 +859,6 @@ export default function ContractPage() {
                     subtitle="Escolha o melhor dia e horário para receber nosso técnico."
                   />
                   <div className="p-6 md:p-8 space-y-6">
-                    {/* Date picker */}
                     <div>
                       <Label className="text-sm font-semibold mb-3 block">Data preferida</Label>
                       <div className="grid grid-cols-4 gap-2">
@@ -677,7 +882,6 @@ export default function ContractPage() {
                       </div>
                     </div>
 
-                    {/* Time slots */}
                     <div>
                       <Label className="text-sm font-semibold mb-3 block flex items-center gap-1.5">
                         <Clock className="w-4 h-4 text-primary" />
@@ -721,11 +925,38 @@ export default function ContractPage() {
                     subtitle="Verifique se todos os dados estão corretos antes de finalizar."
                   />
                   <div className="p-6 md:p-8 space-y-5">
-                    {/* Plano */}
+
+                    {/* Planos */}
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Plano selecionado</p>
-                      <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
-                        <p className="font-bold text-primary">{planDisplayLabel}</p>
+                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Planos contratados</p>
+                      <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Wifi className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <p className="text-sm font-bold text-primary">
+                            {selectedInternetPlan?.name ?? (FALLBACK_PLANS[selectedInternetKey] ?? selectedInternetKey)}
+                            {selectedInternetPlan && (
+                              <span className="font-normal text-primary/70"> — {planPriceDisplay(selectedInternetPlan)}</span>
+                            )}
+                          </p>
+                        </div>
+                        {tvEnabled && selectedTvPlan && (
+                          <div className="flex items-center gap-2">
+                            <Tv className="w-3.5 h-3.5 text-primary shrink-0" />
+                            <p className="text-sm font-medium text-primary">
+                              {selectedTvPlan.name} · {tvPontos} ponto{tvPontos > 1 ? "s" : ""}
+                              <span className="font-normal text-primary/70"> — {calcPriceDisplay(selectedTvPlan, tvPontos)}</span>
+                            </p>
+                          </div>
+                        )}
+                        {telefoneEnabled && selectedTelefonePlan && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-3.5 h-3.5 text-primary shrink-0" />
+                            <p className="text-sm font-medium text-primary">
+                              {selectedTelefonePlan.name} · {telefoneLinhas} linha{telefoneLinhas > 1 ? "s" : ""}
+                              <span className="font-normal text-primary/70"> — {calcPriceDisplay(selectedTelefonePlan, telefoneLinhas)}</span>
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
 
