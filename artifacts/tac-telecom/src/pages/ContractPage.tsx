@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -12,7 +12,21 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const WHATSAPP_NUMBER = "554836600800";
+const API_BASE = "/api";
 
+type ApiPlan = {
+  id: number;
+  tab: string;
+  name: string;
+  speed: string;
+  price: string;
+  priceCents: string;
+  planKey: string;
+  features: string[];
+  isFeatured: boolean;
+};
+
+// Fallback labels (used if API fails to load)
 const PLANS: Record<string, string> = {
   "fibra400": "Fibra 400 Mega — R$ 89,90/mês",
   "fibra600": "Fibra 600 Mega — R$ 99,90/mês",
@@ -21,6 +35,13 @@ const PLANS: Record<string, string> = {
   "tv400": "TAC TV Essencial + 400 Mega — R$ 119,90/mês",
   "tv600": "TAC TV Plus + 600 Mega — R$ 139,90/mês",
   "tv1g": "TAC TV Premium + 1 Giga — R$ 169,90/mês",
+};
+
+const PLAN_TAB_LABELS: Record<string, string> = {
+  fibra: "🌐 Fibra Óptica",
+  tv: "📺 TAC TV",
+  telefone: "📞 Telefone",
+  "tv+telefone": "📺📞 TV+Telefone",
 };
 
 const CITIES = [
@@ -41,7 +62,7 @@ const TIME_SLOTS = [
 const STEP_LABELS = ["Seus Dados", "Endereço", "Agendamento", "Confirmar"];
 
 type Step1Data = {
-  nome: string; email: string; telefone: string;
+  nome: string; email: string; telefone: string; cpf: string;
   outroNome: string; outroTelefone: string; temOutro: boolean;
 };
 type Step2Data = {
@@ -55,6 +76,27 @@ const stepVariants = {
   center: { opacity: 1, x: 0, transition: { duration: 0.3, ease: "easeOut" as const } },
   exit: (dir: number) => ({ opacity: 0, x: dir > 0 ? -40 : 40, transition: { duration: 0.2 } }),
 };
+
+function formatCpf(val: string): string {
+  const d = val.replace(/\D/g, "").slice(0, 11);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+}
+
+function cpfIsValid(cpf: string): boolean {
+  const d = cpf.replace(/\D/g, "");
+  if (d.length !== 11) return false;
+  if (/^(\d)\1+$/.test(d)) return false;
+  const calc = (digits: string, factor: number) => {
+    let sum = 0;
+    for (let i = 0; i < factor - 1; i++) sum += parseInt(digits[i]) * (factor - i);
+    const rem = (sum * 10) % 11;
+    return rem >= 10 ? 0 : rem;
+  };
+  return calc(d, 10) === parseInt(d[9]) && calc(d, 11) === parseInt(d[10]);
+}
 
 function formatPhone(val: string) {
   const d = val.replace(/\D/g, "").slice(0, 11);
@@ -130,11 +172,45 @@ export default function ContractPage() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const planoKey = params.get("plano") ?? "fibra1g";
-  const planoLabel = PLANS[planoKey] ?? PLANS["fibra1g"];
 
   const [step, setStep] = useState(0);
   const [dir, setDir] = useState(1);
   const [sent, setSent] = useState(false);
+
+  // Plan selector
+  const [apiPlans, setApiPlans] = useState<ApiPlan[]>([]);
+  const [selectedPlanKey, setSelectedPlanKey] = useState(planoKey);
+  const [planSelectorOpen, setPlanSelectorOpen] = useState(false);
+  const [planTab, setPlanTab] = useState("fibra");
+
+  useEffect(() => {
+    fetch(`${API_BASE}/content/plans`)
+      .then(r => r.json())
+      .then((data: ApiPlan[]) => {
+        setApiPlans(data);
+        const found = data.find(p => p.planKey === planoKey);
+        if (found) setPlanTab(found.tab);
+      })
+      .catch(() => {});
+  }, [planoKey]);
+
+  // Keep selectedPlanKey in sync if the URL query param changes after mount
+  useEffect(() => {
+    setSelectedPlanKey(planoKey);
+  }, [planoKey]);
+
+  const selectedPlan = apiPlans.find(p => p.planKey === selectedPlanKey);
+  const plansForTab = apiPlans.filter(p => p.tab === planTab);
+  const availableTabs = [...new Set(apiPlans.map(p => p.tab))];
+
+  // Display label (with price for UI)
+  const planDisplayLabel = selectedPlan
+    ? `${selectedPlan.name} — R$ ${selectedPlan.price},${selectedPlan.priceCents}/mês`
+    : (PLANS[selectedPlanKey] ?? PLANS["fibra1g"]);
+  // Name only (no price) — used in WhatsApp message
+  const planNameOnly = selectedPlan
+    ? selectedPlan.name
+    : (PLANS[selectedPlanKey] ?? PLANS["fibra1g"]).split(" — ")[0];
 
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
@@ -161,7 +237,7 @@ export default function ContractPage() {
   };
 
   const [step1, setStep1] = useState<Step1Data>({
-    nome: "", email: "", telefone: "",
+    nome: "", email: "", telefone: "", cpf: "",
     outroNome: "", outroTelefone: "", temOutro: false,
   });
   const [step2, setStep2] = useState<Step2Data>({
@@ -179,6 +255,7 @@ export default function ContractPage() {
   const step1Valid = step1.nome.trim().length >= 2
     && step1.email.includes("@")
     && step1.telefone.replace(/\D/g, "").length >= 10
+    && cpfIsValid(step1.cpf)
     && (!step1.temOutro || (step1.outroNome.trim().length >= 2 && step1.outroTelefone.replace(/\D/g, "").length >= 10));
 
   const step2Valid = step2.cep.replace(/\D/g, "").length === 8
@@ -196,10 +273,11 @@ export default function ContractPage() {
     const lines = [
       `Olá! Quero contratar a TAC Telecom.`,
       ``,
-      `*Plano escolhido:* ${planoLabel}`,
+      `*Plano escolhido:* ${planNameOnly}`,
       ``,
       `*Dados pessoais:*`,
       `Nome: ${step1.nome}`,
+      `CPF: ${step1.cpf}`,
       `E-mail: ${step1.email}`,
       `Telefone: ${step1.telefone}`,
     ];
@@ -271,12 +349,72 @@ export default function ContractPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
 
-          {/* Plan pill */}
-          <div className="text-center mb-8">
-            <span className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 rounded-full px-4 py-1.5 text-sm font-semibold">
-              <Check className="w-4 h-4" />
-              {planoLabel}
-            </span>
+          {/* Plan selector */}
+          <div className="mb-8">
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <span className="inline-flex items-center gap-2 bg-primary/10 text-primary border border-primary/20 rounded-full px-4 py-1.5 text-sm font-semibold">
+                <Check className="w-4 h-4" />
+                {planDisplayLabel}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPlanSelectorOpen(o => !o)}
+                className="text-xs text-primary underline underline-offset-2 hover:text-primary/80 transition-colors font-medium"
+              >
+                {planSelectorOpen ? "Fechar" : "Trocar plano"}
+              </button>
+            </div>
+
+            {planSelectorOpen && apiPlans.length > 0 && (
+              <div className="mt-4 bg-card border border-border rounded-2xl shadow-lg p-4 space-y-3">
+                {/* Tab buttons */}
+                <div className="flex gap-2 flex-wrap">
+                  {availableTabs.map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setPlanTab(t)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${planTab === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"}`}
+                    >
+                      {PLAN_TAB_LABELS[t] ?? t}
+                    </button>
+                  ))}
+                </div>
+                {/* Internet always included notice */}
+                {planTab !== "fibra" && (
+                  <p className="text-xs text-primary font-medium flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5" />
+                    Internet Fibra sempre inclusa em todos os planos
+                  </p>
+                )}
+                {/* Plan cards */}
+                <div className="grid grid-cols-1 gap-2">
+                  {plansForTab.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-2">Nenhum plano disponível nesta categoria.</p>
+                  )}
+                  {plansForTab.map(plan => (
+                    <button
+                      key={plan.planKey}
+                      type="button"
+                      onClick={() => { setSelectedPlanKey(plan.planKey); setPlanSelectorOpen(false); }}
+                      className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${selectedPlanKey === plan.planKey ? "border-primary bg-primary/10" : "border-border hover:border-primary/40 hover:bg-muted/30"}`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate">{plan.name}</p>
+                          {plan.speed && <p className="text-xs text-muted-foreground">{plan.speed} Mbps</p>}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-base font-black text-primary">R$ {plan.price},{plan.priceCents}</p>
+                          <p className="text-xs text-muted-foreground">/mês</p>
+                        </div>
+                        {selectedPlanKey === plan.planKey && <Check className="w-4 h-4 text-primary shrink-0" />}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Step indicator */}
@@ -319,6 +457,20 @@ export default function ContractPage() {
                       <Label htmlFor="nome">Nome Completo</Label>
                       <Input id="nome" data-testid="input-nome" placeholder="Seu nome completo"
                         value={step1.nome} onChange={e => setStep1(p => ({ ...p, nome: e.target.value }))} className="h-12" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cpf">CPF</Label>
+                      <Input
+                        id="cpf"
+                        data-testid="input-cpf"
+                        placeholder="000.000.000-00"
+                        value={step1.cpf}
+                        onChange={e => setStep1(p => ({ ...p, cpf: formatCpf(e.target.value) }))}
+                        className={`h-12 ${step1.cpf.length > 0 && !cpfIsValid(step1.cpf) ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      />
+                      {step1.cpf.length > 0 && !cpfIsValid(step1.cpf) && (
+                        <p className="text-xs text-destructive">CPF inválido. Verifique e tente novamente.</p>
+                      )}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div className="space-y-2">
@@ -573,7 +725,7 @@ export default function ContractPage() {
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Plano selecionado</p>
                       <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
-                        <p className="font-bold text-primary">{planoLabel}</p>
+                        <p className="font-bold text-primary">{planDisplayLabel}</p>
                       </div>
                     </div>
 
@@ -582,6 +734,7 @@ export default function ContractPage() {
                       <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">Dados pessoais</p>
                       <div className="bg-muted/40 rounded-xl px-4 py-3 space-y-1.5">
                         <p className="text-sm"><span className="text-muted-foreground">Nome:</span> <span className="font-medium">{step1.nome}</span></p>
+                        <p className="text-sm"><span className="text-muted-foreground">CPF:</span> <span className="font-medium">{step1.cpf}</span></p>
                         <p className="text-sm"><span className="text-muted-foreground">E-mail:</span> <span className="font-medium">{step1.email}</span></p>
                         <p className="text-sm"><span className="text-muted-foreground">Telefone:</span> <span className="font-medium">{step1.telefone}</span></p>
                       </div>

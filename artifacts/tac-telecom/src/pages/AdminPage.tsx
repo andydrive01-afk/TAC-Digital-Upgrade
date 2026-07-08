@@ -668,7 +668,7 @@ function BonusPicker({ all, selectedIds, onChange }: {
 function PlansTab({ token }: { token: string }) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [bonusProducts, setBonusProducts] = useState<BonusProduct[]>([]);
-  const [tab, setTab] = useState<"fibra" | "tv">("fibra");
+  const [tab, setTab] = useState<"fibra" | "tv" | "telefone" | "tv+telefone">("fibra");
   const [editing, setEditing] = useState<Partial<Plan> | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -744,10 +744,10 @@ function PlansTab({ token }: { token: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex gap-2">
-          {(["fibra", "tv"] as const).map(t => (
+        <div className="flex gap-2 flex-wrap">
+          {(["fibra", "tv", "telefone", "tv+telefone"] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${tab === t ? "bg-primary text-primary-foreground" : "bg-card border border-border text-muted-foreground hover:text-foreground"}`}>
-              {t === "fibra" ? "🌐 Fibra Óptica" : "📺 TAC TV"}
+              {t === "fibra" ? "🌐 Fibra Óptica" : t === "tv" ? "📺 TAC TV" : t === "telefone" ? "📞 Telefone" : "📺📞 TV+Telefone"}
             </button>
           ))}
         </div>
