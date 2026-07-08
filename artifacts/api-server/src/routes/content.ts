@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { heroes, plans, coverageCities, siteConfig, bonusProducts } from "@workspace/db";
+import { heroes, plans, coverageCities, siteConfig, bonusProducts, apps } from "@workspace/db";
 import { asc, eq } from "drizzle-orm";
 import { seedDefaultData } from "../lib/seed.js";
 
@@ -61,6 +61,21 @@ router.get("/content/bonus-products", async (req, res) => {
     res.json(rows);
   } catch (err) {
     req.log.error({ err }, "content/bonus-products error");
+    res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+router.get("/content/apps", async (req, res) => {
+  try {
+    await seedDefaultData();
+    const rows = await db
+      .select()
+      .from(apps)
+      .where(eq(apps.active, true))
+      .orderBy(asc(apps.order), asc(apps.id));
+    res.json(rows);
+  } catch (err) {
+    req.log.error({ err }, "content/apps error");
     res.status(500).json({ error: "Erro interno" });
   }
 });

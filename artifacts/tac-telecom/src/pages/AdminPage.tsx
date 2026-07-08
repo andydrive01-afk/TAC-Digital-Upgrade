@@ -9,7 +9,7 @@ import {
   Phone, Star, Briefcase, Gauge, Users, Home, LogOut,
   Plus, Trash2, Pencil, Save, X, Eye, EyeOff,
   ChevronUp, ChevronDown, Check, Image as ImageIcon, Settings,
-  MapPin, LayoutList, Layers, Loader2, Monitor,
+  MapPin, LayoutList, Layers, Loader2, Monitor, LayoutGrid,
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -83,6 +83,16 @@ type City = {
   state: string;
   active: boolean;
   order: number;
+};
+
+type App = {
+  id: number;
+  name: string;
+  description: string;
+  iconUrl: string;
+  url: string;
+  order: number;
+  active: boolean;
 };
 
 type Config = Record<string, string>;
@@ -1301,10 +1311,152 @@ function BonusProductsTab({ token }: { token: string }) {
   );
 }
 
+// ── APPS TAB ──────────────────────────────────────────────────────────────────
+function AppsTab({ token }: { token: string }) {
+  const [appsList, setAppsList] = useState<App[]>([]);
+  const [editing, setEditing] = useState<Partial<App> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch(`${API}/admin/apps`, { headers: authHeader(token) });
+    if (res.ok) setAppsList(await res.json() as App[]);
+    setLoading(false);
+  }, [token]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const save = async () => {
+    if (!editing) return;
+    setSaving(true);
+    const isNew = !editing.id;
+    const url = isNew ? `${API}/admin/apps` : `${API}/admin/apps/${editing.id}`;
+    const method = isNew ? "POST" : "PUT";
+    await fetch(url, { method, headers: authHeader(token), body: JSON.stringify(editing) });
+    setSaving(false);
+    setEditing(null);
+    await load();
+  };
+
+  const del = async (id: number) => {
+    if (!confirm("Deletar este aplicativo?")) return;
+    await fetch(`${API}/admin/apps/${id}`, { method: "DELETE", headers: authHeader(token) });
+    await load();
+  };
+
+  const toggle = async (app: App) => {
+    await fetch(`${API}/admin/apps/${app.id}`, {
+      method: "PUT", headers: authHeader(token),
+      body: JSON.stringify({ active: !app.active }),
+    });
+    await load();
+  };
+
+  const move = async (app: App, dir: -1 | 1) => {
+    await fetch(`${API}/admin/apps/${app.id}`, {
+      method: "PUT", headers: authHeader(token),
+      body: JSON.stringify({ order: app.order + dir }),
+    });
+    await load();
+  };
+
+  const blank: Partial<App> = { name: "", description: "", iconUrl: "", url: "", order: appsList.length, active: true };
+
+  if (loading) return <p className="text-muted-foreground py-8 text-center">Carregando aplicativos...</p>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Aplicativos ({appsList.length})</h2>
+        <Button size="sm" onClick={() => setEditing(blank)}>
+          <Plus className="w-4 h-4 mr-2" />Novo App
+        </Button>
+      </div>
+
+      {editing && (
+        <Card className="border-primary">
+          <CardHeader>
+            <CardTitle className="text-base">{editing.id ? "Editar Aplicativo" : "Novo Aplicativo"}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Nome do app</Label>
+                <Input value={editing.name ?? ""} onChange={e => setEditing({ ...editing, name: e.target.value })} placeholder="Ex: Disney+" />
+              </div>
+              <div className="space-y-1">
+                <Label>URL do site (opcional)</Label>
+                <p className="text-xs text-muted-foreground -mt-0.5">Ao clicar no card, abre esta URL em nova aba</p>
+                <Input value={editing.url ?? ""} onChange={e => setEditing({ ...editing, url: e.target.value })} placeholder="https://www.disneyplus.com" />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label>Descrição curta</Label>
+                <Input value={editing.description ?? ""} onChange={e => setEditing({ ...editing, description: e.target.value })} placeholder="Ex: Filmes e séries Disney, Marvel e Star Wars" />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label>Ícone / Logo do app</Label>
+                <ImageUpload value={editing.iconUrl ?? ""} onChange={url => setEditing({ ...editing, iconUrl: url })} />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button size="sm" onClick={() => void save()} disabled={saving}>
+                <Save className="w-4 h-4 mr-2" />{saving ? "Salvando..." : "Salvar"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
+                <X className="w-4 h-4 mr-2" />Cancelar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="space-y-2">
+        {appsList.length === 0 && (
+          <p className="text-center text-muted-foreground py-8">Nenhum aplicativo cadastrado ainda.</p>
+        )}
+        {appsList.map((app) => (
+          <Card key={app.id} className={!app.active ? "opacity-50" : ""}>
+            <CardContent className="py-3 px-4 flex items-center gap-3">
+              <div className="flex flex-col gap-1 shrink-0">
+                <button className="text-muted-foreground hover:text-foreground" onClick={() => void move(app, -1)}><ChevronUp className="w-4 h-4" /></button>
+                <button className="text-muted-foreground hover:text-foreground" onClick={() => void move(app, 1)}><ChevronDown className="w-4 h-4" /></button>
+              </div>
+              <div className="w-10 h-10 rounded-xl overflow-hidden bg-muted border border-border flex items-center justify-center shrink-0">
+                {app.iconUrl
+                  ? <img src={app.iconUrl} alt={app.name} className="w-full h-full object-contain p-0.5" />
+                  : <span className="text-lg font-black text-primary select-none">{app.name.charAt(0)}</span>
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">{app.name}</p>
+                {app.description && <p className="text-xs text-muted-foreground truncate">{app.description}</p>}
+                {app.url && <p className="text-xs text-primary/70 truncate">{app.url}</p>}
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button size="icon" variant="ghost" className="w-8 h-8" onClick={() => void toggle(app)} title={app.active ? "Ocultar" : "Mostrar"}>
+                  {app.active ? <Eye className="w-4 h-4 text-primary" /> : <EyeOff className="w-4 h-4" />}
+                </Button>
+                <Button size="icon" variant="ghost" className="w-8 h-8" onClick={() => setEditing(app)}>
+                  <Pencil className="w-4 h-4" />
+                </Button>
+                <Button size="icon" variant="ghost" className="w-8 h-8 text-destructive hover:text-destructive" onClick={() => void del(app.id)}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── MAIN ADMIN PAGE ───────────────────────────────────────────────────────────
 const TABS = [
   { id: "heroes",   label: "Hero / Slideshow", icon: <Layers className="w-4 h-4" /> },
   { id: "plans",    label: "Planos",            icon: <LayoutList className="w-4 h-4" /> },
+  { id: "apps",     label: "Aplicativos",       icon: <LayoutGrid className="w-4 h-4" /> },
   { id: "brindes",  label: "Brindes",           icon: <ImageIcon className="w-4 h-4" /> },
   { id: "cities",   label: "Cobertura",         icon: <MapPin className="w-4 h-4" /> },
   { id: "config",   label: "Configurações",     icon: <Settings className="w-4 h-4" /> },
@@ -1371,6 +1523,7 @@ export default function AdminPage() {
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         {activeTab === "heroes" && <HeroesTab token={token} />}
         {activeTab === "plans" && <PlansTab token={token} />}
+        {activeTab === "apps" && <AppsTab token={token} />}
         {activeTab === "brindes" && <BonusProductsTab token={token} />}
         {activeTab === "cities" && <CitiesTab token={token} />}
         {activeTab === "config" && <ConfigTab token={token} />}

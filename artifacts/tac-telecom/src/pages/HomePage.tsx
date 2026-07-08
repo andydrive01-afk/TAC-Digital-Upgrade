@@ -38,6 +38,7 @@ type Plan = {
   features: string[]; bonusIds: number[]; planKey: string; order: number; active: boolean;
 };
 
+type App = { id: number; name: string; description: string; iconUrl: string; url: string; order: number; active: boolean; };
 type BonusProduct = { id: number; name: string; imageUrl: string; alt: string; };
 type City = { id: number; name: string; state: string; active: boolean; order: number };
 type GoogleReview = { authorName: string; authorPhoto: string; rating: number; text: string; relativeTime: string };
@@ -123,6 +124,33 @@ function PlanCard({ plan, bonusMap }: { plan: Plan; bonusMap: Map<number, BonusP
       </CardFooter>
     </Card>
   );
+}
+
+// ── App Card ─────────────────────────────────────────────────────────────────
+function AppCard({ app }: { app: App }) {
+  const inner = (
+    <div className={`flex flex-col items-center p-4 rounded-2xl bg-card border border-border/50 transition-colors h-full ${app.url ? "hover:border-primary/50 hover:bg-primary/5 cursor-pointer" : ""}`}>
+      <div className="w-16 h-16 rounded-2xl bg-muted border border-border/50 flex items-center justify-center mb-3 overflow-hidden shrink-0">
+        {app.iconUrl
+          ? <img src={app.iconUrl} alt={app.name} className="w-full h-full object-contain p-1" />
+          : <span className="text-2xl font-black text-primary select-none">{app.name.charAt(0)}</span>
+        }
+      </div>
+      <p className="text-sm font-bold text-center leading-tight mb-1">{app.name}</p>
+      {app.description && (
+        <p className="text-xs text-muted-foreground text-center leading-snug line-clamp-2">{app.description}</p>
+      )}
+    </div>
+  );
+
+  if (app.url) {
+    return (
+      <a href={app.url} target="_blank" rel="noopener noreferrer" className="block h-full">
+        {inner}
+      </a>
+    );
+  }
+  return <div className="h-full">{inner}</div>;
 }
 
 // ── Hero Carousel ─────────────────────────────────────────────────────────────
@@ -232,6 +260,7 @@ export default function HomePage() {
   const [logoUrl, setLogoUrl] = useState<string>("");
   const [faviconUrl, setFaviconUrl] = useState<string>("");
   const [bonusMap, setBonusMap] = useState<Map<number, BonusProduct>>(new Map());
+  const [apps, setApps] = useState<App[]>([]);
   const [coverageSubmitted, setCoverageSubmitted] = useState(false);
 
   useEffect(() => {
@@ -271,6 +300,11 @@ export default function HomePage() {
         data.forEach(b => m.set(b.id, b));
         setBonusMap(m);
       })
+      .catch(() => {});
+
+    fetch("/api/content/apps")
+      .then(r => r.ok ? r.json() : [])
+      .then((data: App[]) => setApps(data))
       .catch(() => {});
   }, []);
 
@@ -415,6 +449,23 @@ export default function HomePage() {
             )}
           </div>
         </section>
+
+        {/* Apps */}
+        {apps.length > 0 && (
+          <section className="py-20 bg-background border-t border-border/30">
+            <div className="container mx-auto px-4">
+              <div className="text-center max-w-3xl mx-auto mb-10">
+                <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-3">Apps disponíveis nos planos</h2>
+                <p className="text-muted-foreground">Serviços e aplicativos que você pode usar com a sua conexão TAC Telecom</p>
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 max-w-5xl mx-auto">
+                {apps.map(app => (
+                  <AppCard key={app.id} app={app} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Why TAC */}
         <section className="py-24 bg-background">

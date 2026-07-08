@@ -1,5 +1,5 @@
 import { db } from "@workspace/db";
-import { heroes, plans, coverageCities, siteConfig } from "@workspace/db";
+import { heroes, plans, coverageCities, siteConfig, apps } from "@workspace/db";
 import { count } from "drizzle-orm";
 
 let seeded = false;
@@ -62,6 +62,18 @@ export async function seedDefaultData() {
       { key: "google_place_id", value: "" },
       { key: "logo_url", value: "" },
       { key: "favicon_url", value: "" },
+    ]);
+  }
+
+  const [appCount] = await db.select({ c: count() }).from(apps);
+  if ((appCount?.c ?? 0) === 0) {
+    await db.insert(apps).values([
+      { name: "Disney+",   description: "Filmes e séries Disney, Marvel, Star Wars e National Geographic.", iconUrl: "", url: "https://www.disneyplus.com/pt-br", order: 0, active: true },
+      { name: "Max",       description: "Séries originais, filmes e conteúdo HBO, DC e Warner Bros.", iconUrl: "", url: "https://play.max.com/pt-br",            order: 1, active: true },
+      { name: "Looke",     description: "Streaming nacional com filmes brasileiros e produções independentes.", iconUrl: "", url: "https://www.looke.com.br",      order: 2, active: true },
+      { name: "Deezer",    description: "Música streaming com mais de 90 milhões de músicas e podcasts.", iconUrl: "", url: "https://www.deezer.com/br",            order: 3, active: true },
+      { name: "ExitLag",   description: "Otimizador de conexão para gamers — reduz ping e lag em jogos online.", iconUrl: "", url: "https://www.exitlag.com",      order: 4, active: true },
+      { name: "Globoplay", description: "Novelas, jornalismo, séries e filmes da Globo sob demanda.", iconUrl: "", url: "https://globoplay.globo.com",              order: 5, active: true },
     ]);
   }
 }

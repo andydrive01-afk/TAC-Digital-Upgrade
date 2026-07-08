@@ -78,3 +78,19 @@ export const siteConfig = mysqlTable("site_config", {
 });
 
 export type SiteConfigRow = typeof siteConfig.$inferSelect;
+
+export const apps = mysqlTable("apps", {
+  id: int("id").autoincrement().primaryKey(),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  iconUrl: text("icon_url").notNull().default(""),
+  url: text("url").notNull().default(""),
+  order: int("order").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const InsertApp = createInsertSchema(apps);
+export const SelectApp = createSelectSchema(apps);
+export type App = typeof apps.$inferSelect;
+export type InsertAppType = typeof apps.$inferInsert;

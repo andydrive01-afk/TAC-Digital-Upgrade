@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, pool } from "@workspace/db";
-import { heroes, plans, coverageCities, siteConfig, bonusProducts } from "@workspace/db";
+import { heroes, plans, coverageCities, siteConfig, bonusProducts, apps } from "@workspace/db";
 import { eq, asc } from "drizzle-orm";
 import { adminAuth } from "../middlewares/adminAuth.js";
 import { seedDefaultData } from "../lib/seed.js";
@@ -80,6 +80,17 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
         value TEXT NOT NULL,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+      `CREATE TABLE IF NOT EXISTS apps (
+        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        name TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT '',
+        icon_url TEXT NOT NULL DEFAULT '',
+        url TEXT NOT NULL DEFAULT '',
+        \`order\` INT NOT NULL DEFAULT 0,
+        active TINYINT(1) NOT NULL DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
     ];
 
     const results: string[] = [];
@@ -102,9 +113,9 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
 // ── DB STATUS ────────────────────────────────────────────────────────
 router.get("/admin/db-status", adminAuth, async (req, res) => {
   try {
-    const [rows] = await pool.execute("SELECT COUNT(*) AS cnt FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('heroes','plans','coverage_cities','site_config','bonus_products')") as unknown as [{ cnt: number }[]];
+    const [rows] = await pool.execute("SELECT COUNT(*) AS cnt FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('heroes','plans','coverage_cities','site_config','bonus_products','apps')") as unknown as [{ cnt: number }[]];
     const tableCount = Number(rows?.[0]?.cnt ?? 0);
-    res.json({ ok: true, ready: tableCount === 5, tableCount });
+    res.json({ ok: true, ready: tableCount === 6, tableCount });
   } catch {
     res.json({ ok: true, ready: false, tableCount: 0 });
   }
@@ -253,6 +264,43 @@ router.delete("/admin/bonus-products/:id", adminAuth, async (req, res) => {
   try {
     const id = Number(req.params["id"]);
     await db.delete(bonusProducts).where(eq(bonusProducts.id, id));
+    res.status(204).end();
+  } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
+});
+
+// ── APPS ─────────────────────────────────────────────────────────────
+router.get("/admin/apps", adminAuth, async (req, res) => {
+  try {
+    await seedDefaultData();
+    const rows = await db.select().from(apps).orderBy(asc(apps.order), asc(apps.id));
+    res.json(rows);
+  } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
+});
+
+router.post("/admin/apps", adminAuth, async (req, res) => {
+  try {
+    const body = req.body as typeof apps.$inferInsert;
+    const result = await db.insert(apps).values(body);
+    const [row] = await db.select().from(apps).where(eq(apps.id, result[0].insertId));
+    res.status(201).json(row);
+  } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
+});
+
+router.put("/admin/apps/:id", adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params["id"]);
+    const body = req.body as Partial<typeof apps.$inferInsert>;
+    await db.update(apps).set(body).where(eq(apps.id, id));
+    const [row] = await db.select().from(apps).where(eq(apps.id, id));
+    if (!row) { res.status(404).json({ error: "Não encontrado" }); return; }
+    res.json(row);
+  } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
+});
+
+router.delete("/admin/apps/:id", adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params["id"]);
+    await db.delete(apps).where(eq(apps.id, id));
     res.status(204).end();
   } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
 });
