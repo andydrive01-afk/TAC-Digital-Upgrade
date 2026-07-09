@@ -4,7 +4,7 @@ import {
   heroes, plans, coverageCities, siteConfig, bonusProducts, apps, stores, adminUsers,
 } from "@workspace/db";
 import { eq, asc } from "drizzle-orm";
-import { adminAuth } from "../middlewares/adminAuth.js";
+import { adminAuth, invalidateUserCache } from "../middlewares/adminAuth.js";
 import { seedDefaultData } from "../lib/seed.js";
 import { jwtSign } from "./setup.js";
 import bcrypt from "bcryptjs";
@@ -178,6 +178,8 @@ router.post("/admin/users", adminAuth, async (req, res) => {
       .select({ id: adminUsers.id, username: adminUsers.username, createdAt: adminUsers.createdAt })
       .from(adminUsers)
       .where(eq(adminUsers.id, result[0].insertId));
+    // Evict any stale negative-cache entry so the new user can auth immediately.
+    invalidateUserCache(username.trim());
     res.status(201).json(row);
   } catch (err: any) {
     if (err?.code === "ER_DUP_ENTRY") { res.status(409).json({ error: "Este usuário já existe." }); return; }
@@ -188,6 +190,14 @@ router.post("/admin/users", adminAuth, async (req, res) => {
 router.delete("/admin/users/:id", adminAuth, async (req, res) => {
   try {
     const id = Number(req.params["id"]);
+
+    // Fetch username first so we can invalidate the auth cache on success.
+    const [userRows] = await pool.execute(
+      "SELECT username FROM admin_users WHERE id = ? LIMIT 1",
+      [id],
+    ) as unknown as [{ username: string }[]];
+    const targetUsername = userRows?.[0]?.username;
+
     // Atomic: only delete if more than one admin exists.
     // Uses a subquery so the count check + delete are a single statement with no TOCTOU gap.
     const [result] = await pool.execute(
@@ -199,6 +209,10 @@ router.delete("/admin/users/:id", adminAuth, async (req, res) => {
       res.status(400).json({ error: "Não é possível remover o único administrador ou o usuário não existe." });
       return;
     }
+
+    // Evict from the auth cache so any in-flight token for this user is rejected immediately.
+    if (targetUsername) invalidateUserCache(targetUsername);
+
     res.status(204).end();
   } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
 });

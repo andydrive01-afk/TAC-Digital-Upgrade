@@ -3,6 +3,7 @@ import { pool } from "@workspace/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { seedDefaultData } from "../lib/seed.js";
+import { invalidateUserCache } from "../middlewares/adminAuth.js";
 
 const router: IRouter = Router();
 
@@ -172,6 +173,8 @@ router.post("/setup/init", async (req, res) => {
       "INSERT INTO admin_users (username, password_hash) VALUES (?, ?)",
       [username.trim(), hash],
     );
+    // Evict any stale negative-cache entry so the new admin can auth immediately.
+    invalidateUserCache(username.trim());
 
     res.json({ ok: true, token: jwtSign(username.trim()) });
   } catch (err) {
