@@ -106,7 +106,7 @@ async function _doSeed() {
         { name: "Unidade Treze de Maio",    address: "R. Ademar Ghisi",                               city: "Treze de Maio — SC",    lat: "-28.558813", lng: "-49.149606", mapsUrl: "https://www.google.com/maps/place/28%C2%B033'31.7%22S+49%C2%B008'58.6%22W/@-28.558813,-49.1517947,17z",              order: 5, active: true },
         { name: "Unidade Bal. Esplanada",   address: "R. Antônio Lima, S/N — Balneário Esplanada",   city: "Jaguaruna — SC",        lat: "-28.559253", lng: "-49.186591", mapsUrl: "https://maps.google.com/?cid=17105075346311767577&hl=pt-BR&gl=BR",                                                      order: 6, active: true },
         { name: "Unidade Bal. Campo Bom",   address: "R. José Cândido Coelho — Balneário Campo Bom", city: "Jaguaruna — SC",        lat: "-28.831110", lng: "-49.234690", mapsUrl: "https://maps.google.com/?cid=7982292855595746525&hl=pt-BR&gl=BR",                                                       order: 7, active: true },
-        { name: "Unidade Bal. Camacho",     address: "Rodovia Claudino Abel Botega — Bal. Camacho",  city: "Jaguaruna — SC",        lat: "-28.474635", lng: "-49.030991", mapsUrl: "https://maps.google.com/?cid=12227651356689930108&hl=pt-BR&gl=BR",                                                      order: 8, active: true },
+        { name: "Unidade Bal. Camacho",     address: "Rodovia Claudino Abel Botega — Bal. Camacho",  city: "Jaguaruna — SC",        lat: "-28.612222", lng: "-48.869382", mapsUrl: "https://maps.google.com/?cid=12227651356689930108&hl=pt-BR&gl=BR",                                                      order: 8, active: true },
       ]);
     }
 
