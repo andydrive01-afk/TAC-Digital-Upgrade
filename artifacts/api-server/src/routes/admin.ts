@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, pool } from "@workspace/db";
-import { heroes, plans, coverageCities, siteConfig, bonusProducts, apps } from "@workspace/db";
+import { heroes, plans, coverageCities, siteConfig, bonusProducts, apps, stores } from "@workspace/db";
 import { eq, asc } from "drizzle-orm";
 import { adminAuth } from "../middlewares/adminAuth.js";
 import { seedDefaultData } from "../lib/seed.js";
@@ -23,15 +23,15 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
     const statements = [
       `CREATE TABLE IF NOT EXISTS heroes (
         id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        badge TEXT NOT NULL DEFAULT '',
-        title TEXT NOT NULL DEFAULT '',
-        title_highlight TEXT NOT NULL DEFAULT '',
-        subtitle TEXT NOT NULL DEFAULT '',
-        image_url TEXT NOT NULL DEFAULT '',
-        cta_primary TEXT NOT NULL DEFAULT 'Ver Planos',
-        cta_primary_href TEXT NOT NULL DEFAULT '/#planos',
-        cta_secondary TEXT NOT NULL DEFAULT 'Consultar Cobertura',
-        cta_secondary_href TEXT NOT NULL DEFAULT '/#cobertura',
+        badge VARCHAR(1000) NOT NULL DEFAULT '',
+        title VARCHAR(1000) NOT NULL DEFAULT '',
+        title_highlight VARCHAR(1000) NOT NULL DEFAULT '',
+        subtitle VARCHAR(1000) NOT NULL DEFAULT '',
+        image_url VARCHAR(1000) NOT NULL DEFAULT '',
+        cta_primary VARCHAR(500) NOT NULL DEFAULT 'Ver Planos',
+        cta_primary_href VARCHAR(500) NOT NULL DEFAULT '/#planos',
+        cta_secondary VARCHAR(500) NOT NULL DEFAULT 'Consultar Cobertura',
+        cta_secondary_href VARCHAR(500) NOT NULL DEFAULT '/#cobertura',
         \`order\` INT NOT NULL DEFAULT 0,
         active TINYINT(1) NOT NULL DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -39,9 +39,9 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
 
       `CREATE TABLE IF NOT EXISTS bonus_products (
         id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        name TEXT NOT NULL DEFAULT '',
-        image_url TEXT NOT NULL DEFAULT '',
-        alt TEXT NOT NULL DEFAULT '',
+        name VARCHAR(1000) NOT NULL DEFAULT '',
+        image_url VARCHAR(1000) NOT NULL DEFAULT '',
+        alt VARCHAR(1000) NOT NULL DEFAULT '',
         \`order\` INT NOT NULL DEFAULT 0,
         active TINYINT(1) NOT NULL DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -49,12 +49,12 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
 
       `CREATE TABLE IF NOT EXISTS plans (
         id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        tab TEXT NOT NULL DEFAULT 'fibra',
-        name TEXT NOT NULL DEFAULT '',
-        speed TEXT NOT NULL DEFAULT '',
-        price TEXT NOT NULL DEFAULT '',
-        price_cents TEXT NOT NULL DEFAULT '90',
-        badge TEXT NOT NULL DEFAULT '',
+        tab VARCHAR(100) NOT NULL DEFAULT 'fibra',
+        name VARCHAR(500) NOT NULL DEFAULT '',
+        speed VARCHAR(500) NOT NULL DEFAULT '',
+        price VARCHAR(500) NOT NULL DEFAULT '',
+        price_cents VARCHAR(100) NOT NULL DEFAULT '90',
+        badge VARCHAR(500) NOT NULL DEFAULT '',
         is_featured TINYINT(1) NOT NULL DEFAULT 0,
         icons JSON NOT NULL,
         features JSON NOT NULL,
@@ -69,7 +69,7 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
       `CREATE TABLE IF NOT EXISTS coverage_cities (
         id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        state TEXT NOT NULL DEFAULT 'SC',
+        state VARCHAR(100) NOT NULL DEFAULT 'SC',
         active TINYINT(1) NOT NULL DEFAULT 1,
         \`order\` INT NOT NULL DEFAULT 0,
         UNIQUE KEY uq_city_name (name)
@@ -83,10 +83,23 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
 
       `CREATE TABLE IF NOT EXISTS apps (
         id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        name TEXT NOT NULL DEFAULT '',
-        description TEXT NOT NULL DEFAULT '',
-        icon_url TEXT NOT NULL DEFAULT '',
-        url TEXT NOT NULL DEFAULT '',
+        name VARCHAR(500) NOT NULL DEFAULT '',
+        description VARCHAR(1000) NOT NULL DEFAULT '',
+        icon_url VARCHAR(1000) NOT NULL DEFAULT '',
+        url VARCHAR(1000) NOT NULL DEFAULT '',
+        \`order\` INT NOT NULL DEFAULT 0,
+        active TINYINT(1) NOT NULL DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+      `CREATE TABLE IF NOT EXISTS stores (
+        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(500) NOT NULL DEFAULT '',
+        address VARCHAR(1000) NOT NULL DEFAULT '',
+        city VARCHAR(500) NOT NULL DEFAULT '',
+        lat VARCHAR(50) NOT NULL DEFAULT '',
+        lng VARCHAR(50) NOT NULL DEFAULT '',
+        maps_url VARCHAR(1000) NOT NULL DEFAULT '',
         \`order\` INT NOT NULL DEFAULT 0,
         active TINYINT(1) NOT NULL DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -113,9 +126,9 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
 // ── DB STATUS ────────────────────────────────────────────────────────
 router.get("/admin/db-status", adminAuth, async (req, res) => {
   try {
-    const [rows] = await pool.execute("SELECT COUNT(*) AS cnt FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('heroes','plans','coverage_cities','site_config','bonus_products','apps')") as unknown as [{ cnt: number }[]];
+    const [rows] = await pool.execute("SELECT COUNT(*) AS cnt FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name IN ('heroes','plans','coverage_cities','site_config','bonus_products','apps','stores')") as unknown as [{ cnt: number }[]];
     const tableCount = Number(rows?.[0]?.cnt ?? 0);
-    res.json({ ok: true, ready: tableCount === 6, tableCount });
+    res.json({ ok: true, ready: tableCount === 7, tableCount });
   } catch {
     res.json({ ok: true, ready: false, tableCount: 0 });
   }
@@ -301,6 +314,43 @@ router.delete("/admin/apps/:id", adminAuth, async (req, res) => {
   try {
     const id = Number(req.params["id"]);
     await db.delete(apps).where(eq(apps.id, id));
+    res.status(204).end();
+  } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
+});
+
+// ── STORES ───────────────────────────────────────────────────────────
+router.get("/admin/stores", adminAuth, async (req, res) => {
+  try {
+    await seedDefaultData();
+    const rows = await db.select().from(stores).orderBy(asc(stores.order), asc(stores.id));
+    res.json(rows);
+  } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
+});
+
+router.post("/admin/stores", adminAuth, async (req, res) => {
+  try {
+    const body = req.body as typeof stores.$inferInsert;
+    const result = await db.insert(stores).values(body);
+    const [row] = await db.select().from(stores).where(eq(stores.id, result[0].insertId));
+    res.status(201).json(row);
+  } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
+});
+
+router.put("/admin/stores/:id", adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params["id"]);
+    const body = req.body as Partial<typeof stores.$inferInsert>;
+    await db.update(stores).set(body).where(eq(stores.id, id));
+    const [row] = await db.select().from(stores).where(eq(stores.id, id));
+    if (!row) { res.status(404).json({ error: "Não encontrado" }); return; }
+    res.json(row);
+  } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
+});
+
+router.delete("/admin/stores/:id", adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params["id"]);
+    await db.delete(stores).where(eq(stores.id, id));
     res.status(204).end();
   } catch (err) { req.log.error({ err }); res.status(500).json({ error: "Erro interno" }); }
 });

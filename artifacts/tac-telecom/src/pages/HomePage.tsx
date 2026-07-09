@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check, Zap, Headphones, Radio, Wifi, MessageCircle, Phone, Star,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, MapPin, ExternalLink,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ type Plan = {
 };
 
 type App = { id: number; name: string; description: string; iconUrl: string; url: string; order: number; active: boolean; };
+type Store = { id: number; name: string; address: string; city: string; lat: string; lng: string; mapsUrl: string; order: number; active: boolean; };
 type BonusProduct = { id: number; name: string; imageUrl: string; alt: string; };
 type City = { id: number; name: string; state: string; active: boolean; order: number };
 type GoogleReview = { authorName: string; authorPhoto: string; rating: number; text: string; relativeTime: string };
@@ -123,6 +124,35 @@ function PlanCard({ plan, bonusMap }: { plan: Plan; bonusMap: Map<number, BonusP
         </Button>
       </CardFooter>
     </Card>
+  );
+}
+
+// ── Store Accordion Item ──────────────────────────────────────────────────────
+function StoreAccordionItem({ store }: { store: Store }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={`rounded-2xl border overflow-hidden transition-colors ${open ? "border-primary/50 bg-primary/5" : "border-border/50 bg-card hover:border-border"}`}>
+      <button onClick={() => setOpen(v => !v)} className="w-full flex items-center justify-between px-4 py-3.5 text-left">
+        <div className="flex items-center gap-2.5">
+          <MapPin className="w-4 h-4 text-primary shrink-0" />
+          <span className="font-semibold text-sm">{store.name}</span>
+        </div>
+        <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform duration-200 shrink-0 ${open ? "rotate-90" : ""}`} />
+      </button>
+      {open && (
+        <div className="px-4 pb-4 border-t border-border/30">
+          <p className="text-sm text-muted-foreground mt-3 mb-0.5 leading-relaxed">{store.address}</p>
+          <p className="text-xs text-muted-foreground/60 mb-3">{store.city}</p>
+          {store.mapsUrl && (
+            <a href={store.mapsUrl} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-primary text-xs font-semibold hover:underline">
+              <ExternalLink className="w-3.5 h-3.5" />
+              Como chegar
+            </a>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -261,6 +291,7 @@ export default function HomePage() {
   const [faviconUrl, setFaviconUrl] = useState<string>("");
   const [bonusMap, setBonusMap] = useState<Map<number, BonusProduct>>(new Map());
   const [apps, setApps] = useState<App[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
   const [coverageSubmitted, setCoverageSubmitted] = useState(false);
 
   useEffect(() => {
@@ -305,6 +336,11 @@ export default function HomePage() {
     fetch("/api/content/apps")
       .then(r => r.ok ? r.json() : [])
       .then((data: App[]) => setApps(data))
+      .catch(() => {});
+
+    fetch("/api/content/stores")
+      .then(r => r.ok ? r.json() : [])
+      .then((data: Store[]) => setStores(data))
       .catch(() => {});
   }, []);
 
@@ -631,33 +667,102 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer id="contato" className="bg-card border-t border-border pt-16 pb-8">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
-            <div>
-              <div className="mb-6"><SiteLogo logoUrl={logoUrl} /></div>
-              <div className="space-y-4">
-                <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors w-fit">
-                  <MessageCircle className="w-5 h-5" /><span>(48) 3660-0800</span>
+      <footer id="contato" className="bg-card border-t border-border">
+        {/* Nossas Lojas */}
+        {stores.length > 0 && (
+          <div className="border-b border-border/50 bg-background/40">
+            <div className="container mx-auto px-4 py-16">
+              <div className="max-w-5xl mx-auto">
+                <div className="text-center mb-10">
+                  <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-2">Nossas Lojas</h2>
+                  <p className="text-muted-foreground text-sm">Atendimento presencial em toda a região — clique na loja para ver o endereço</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {stores.map(store => <StoreAccordionItem key={store.id} store={store} />)}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main footer body */}
+        <div className="container mx-auto px-4 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto items-start">
+
+            {/* Col 1 — Logo + Social + CTA */}
+            <div className="flex flex-col gap-8">
+              <div>
+                <SiteLogo logoUrl={logoUrl} textSize="text-4xl" />
+                <p className="text-muted-foreground mt-4 text-sm leading-relaxed max-w-sm">
+                  Conectando famílias e empresas em Jaguaruna e região com fibra óptica de verdade — velocidade, estabilidade e suporte local 24h.
+                </p>
+              </div>
+
+              {/* Social */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Siga a TAC Telecom</p>
+                <div className="flex gap-3">
+                  <a href="https://www.instagram.com/tactelecom/" target="_blank" rel="noopener noreferrer" aria-label="Instagram"
+                    className="w-11 h-11 rounded-2xl bg-muted border border-border hover:border-primary/50 hover:bg-primary/10 flex items-center justify-center transition-colors text-muted-foreground hover:text-primary">
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                    </svg>
+                  </a>
+                  <a href="https://www.facebook.com/tactelecom/" target="_blank" rel="noopener noreferrer" aria-label="Facebook"
+                    className="w-11 h-11 rounded-2xl bg-muted border border-border hover:border-primary/50 hover:bg-primary/10 flex items-center justify-center transition-colors text-muted-foreground hover:text-primary">
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+
+              {/* WhatsApp + Phone CTAs */}
+              <div className="flex flex-col gap-3">
+                <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-3 bg-[#25D366] text-white font-bold px-7 py-4 rounded-2xl hover:bg-[#20c05c] transition-colors w-full sm:w-fit text-base shadow-lg shadow-[#25D366]/20">
+                  <MessageCircle className="w-6 h-6 shrink-0" />
+                  Falar no WhatsApp
                 </a>
-                <a href="mailto:atendimento@tactelecom.com.br" className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors w-fit">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                  <span>atendimento@tactelecom.com.br</span>
+                <a href="tel:4836600800"
+                  className="inline-flex items-center justify-center gap-3 bg-card border border-border text-foreground font-semibold px-7 py-3.5 rounded-2xl hover:border-primary/50 hover:bg-primary/5 transition-colors w-full sm:w-fit text-sm">
+                  <Phone className="w-5 h-5 shrink-0 text-primary" />
+                  (48) 3660-0800
                 </a>
               </div>
             </div>
-            <div className="md:text-right">
-              <h4 className="font-bold text-foreground mb-6">Links Rápidos</h4>
-              <nav className="flex flex-col gap-3">
-                <a href="#planos" className="text-muted-foreground hover:text-primary transition-colors inline-block md:ml-auto">Planos de Internet</a>
-                <a href="#cobertura" className="text-muted-foreground hover:text-primary transition-colors inline-block md:ml-auto">Consultar Cobertura</a>
-                <a href="#contato" className="text-muted-foreground hover:text-primary transition-colors inline-block md:ml-auto">Contato / Suporte</a>
-              </nav>
+
+            {/* Col 2 — Contact + Quick links */}
+            <div className="flex flex-col gap-8 md:border-l md:border-border/30 md:pl-12">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Contato</p>
+                <a href="mailto:atendimento@tactelecom.com.br"
+                  className="flex items-center gap-3 text-muted-foreground hover:text-primary transition-colors w-fit group">
+                  <div className="w-9 h-9 rounded-xl bg-muted border border-border group-hover:border-primary/50 flex items-center justify-center shrink-0 transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <span className="text-sm">atendimento@tactelecom.com.br</span>
+                </a>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Links Rápidos</p>
+                <nav className="flex flex-col gap-3">
+                  <a href="#planos" className="text-sm text-muted-foreground hover:text-primary transition-colors w-fit">Planos de Internet</a>
+                  <a href="#cobertura" className="text-sm text-muted-foreground hover:text-primary transition-colors w-fit">Consultar Cobertura</a>
+                  <a href="/contratar" className="text-sm text-muted-foreground hover:text-primary transition-colors w-fit">Contratar Plano</a>
+                  <a href="/admin" className="text-sm text-muted-foreground hover:text-primary transition-colors w-fit">Área Administrativa</a>
+                </nav>
+              </div>
             </div>
           </div>
-          <div className="pt-8 border-t border-border/50 text-center text-sm text-muted-foreground">
-            <p>&copy; 2026 TAC Telecom. Todos os direitos reservados.</p>
-          </div>
+        </div>
+
+        {/* Copyright */}
+        <div className="border-t border-border/50 py-6 text-center text-sm text-muted-foreground">
+          <p>&copy; 2026 TAC Telecom. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>

@@ -9,7 +9,7 @@ import {
   Phone, Star, Briefcase, Gauge, Users, Home, LogOut,
   Plus, Trash2, Pencil, Save, X, Eye, EyeOff,
   ChevronUp, ChevronDown, Check, Image as ImageIcon, Settings,
-  MapPin, LayoutList, Layers, Loader2, Monitor, LayoutGrid,
+  MapPin, LayoutList, Layers, Loader2, Monitor, LayoutGrid, Building2,
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -91,6 +91,18 @@ type App = {
   description: string;
   iconUrl: string;
   url: string;
+  order: number;
+  active: boolean;
+};
+
+type Store = {
+  id: number;
+  name: string;
+  address: string;
+  city: string;
+  lat: string;
+  lng: string;
+  mapsUrl: string;
   order: number;
   active: boolean;
 };
@@ -1311,6 +1323,151 @@ function BonusProductsTab({ token }: { token: string }) {
   );
 }
 
+// ── STORES TAB ────────────────────────────────────────────────────────────────
+function StoresTab({ token }: { token: string }) {
+  const [storesList, setStoresList] = useState<Store[]>([]);
+  const [editing, setEditing] = useState<Partial<Store> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch(`${API}/admin/stores`, { headers: authHeader(token) });
+    if (res.ok) setStoresList(await res.json() as Store[]);
+    setLoading(false);
+  }, [token]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const save = async () => {
+    if (!editing) return;
+    setSaving(true);
+    const isNew = !editing.id;
+    const url = isNew ? `${API}/admin/stores` : `${API}/admin/stores/${editing.id}`;
+    const method = isNew ? "POST" : "PUT";
+    await fetch(url, { method, headers: authHeader(token), body: JSON.stringify(editing) });
+    setSaving(false);
+    setEditing(null);
+    await load();
+  };
+
+  const del = async (id: number) => {
+    if (!confirm("Deletar esta loja?")) return;
+    await fetch(`${API}/admin/stores/${id}`, { method: "DELETE", headers: authHeader(token) });
+    await load();
+  };
+
+  const toggle = async (store: Store) => {
+    await fetch(`${API}/admin/stores/${store.id}`, {
+      method: "PUT", headers: authHeader(token),
+      body: JSON.stringify({ active: !store.active }),
+    });
+    await load();
+  };
+
+  const move = async (store: Store, dir: -1 | 1) => {
+    await fetch(`${API}/admin/stores/${store.id}`, {
+      method: "PUT", headers: authHeader(token),
+      body: JSON.stringify({ order: store.order + dir }),
+    });
+    await load();
+  };
+
+  const blank: Partial<Store> = { name: "", address: "", city: "", lat: "", lng: "", mapsUrl: "", order: storesList.length, active: true };
+
+  if (loading) return <p className="text-muted-foreground py-8 text-center">Carregando lojas...</p>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Lojas Físicas ({storesList.length})</h2>
+        <Button size="sm" onClick={() => setEditing(blank)}>
+          <Plus className="w-4 h-4 mr-2" />Nova Loja
+        </Button>
+      </div>
+
+      {editing && (
+        <Card className="border-primary">
+          <CardHeader>
+            <CardTitle className="text-base">{editing.id ? "Editar Loja" : "Nova Loja"}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1 md:col-span-2">
+                <Label>Nome da loja</Label>
+                <Input value={editing.name ?? ""} onChange={e => setEditing({ ...editing, name: e.target.value })} placeholder="Ex: Matriz Jaguaruna" />
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <Label>Endereço</Label>
+                <Input value={editing.address ?? ""} onChange={e => setEditing({ ...editing, address: e.target.value })} placeholder="Ex: Rua Engenheiro Annes Gualberto, 1236 — Centro" />
+              </div>
+              <div className="space-y-1">
+                <Label>Cidade / Estado</Label>
+                <Input value={editing.city ?? ""} onChange={e => setEditing({ ...editing, city: e.target.value })} placeholder="Ex: Jaguaruna — SC" />
+              </div>
+              <div className="space-y-1">
+                <Label>URL Google Maps (botão "Como chegar")</Label>
+                <Input value={editing.mapsUrl ?? ""} onChange={e => setEditing({ ...editing, mapsUrl: e.target.value })} placeholder="https://maps.google.com/..." />
+              </div>
+              <div className="space-y-1">
+                <Label>Latitude</Label>
+                <Input value={editing.lat ?? ""} onChange={e => setEditing({ ...editing, lat: e.target.value })} placeholder="Ex: -28.6146" />
+              </div>
+              <div className="space-y-1">
+                <Label>Longitude</Label>
+                <Input value={editing.lng ?? ""} onChange={e => setEditing({ ...editing, lng: e.target.value })} placeholder="Ex: -49.0256" />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button size="sm" onClick={() => void save()} disabled={saving}>
+                <Save className="w-4 h-4 mr-2" />{saving ? "Salvando..." : "Salvar"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
+                <X className="w-4 h-4 mr-2" />Cancelar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="space-y-2">
+        {storesList.length === 0 && (
+          <p className="text-center text-muted-foreground py-8">Nenhuma loja cadastrada ainda.</p>
+        )}
+        {storesList.map((store) => (
+          <Card key={store.id} className={!store.active ? "opacity-50" : ""}>
+            <CardContent className="py-3 px-4 flex items-center gap-3">
+              <div className="flex flex-col gap-1 shrink-0">
+                <button className="text-muted-foreground hover:text-foreground" onClick={() => void move(store, -1)}><ChevronUp className="w-4 h-4" /></button>
+                <button className="text-muted-foreground hover:text-foreground" onClick={() => void move(store, 1)}><ChevronDown className="w-4 h-4" /></button>
+              </div>
+              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <MapPin className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm truncate">{store.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{store.address}</p>
+                <p className="text-xs text-muted-foreground/60 truncate">{store.city}</p>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button size="icon" variant="ghost" className="w-8 h-8" onClick={() => void toggle(store)} title={store.active ? "Ocultar" : "Mostrar"}>
+                  {store.active ? <Eye className="w-4 h-4 text-primary" /> : <EyeOff className="w-4 h-4" />}
+                </Button>
+                <Button size="icon" variant="ghost" className="w-8 h-8" onClick={() => setEditing(store)}>
+                  <Pencil className="w-4 h-4" />
+                </Button>
+                <Button size="icon" variant="ghost" className="w-8 h-8 text-destructive hover:text-destructive" onClick={() => void del(store.id)}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── APPS TAB ──────────────────────────────────────────────────────────────────
 function AppsTab({ token }: { token: string }) {
   const [appsList, setAppsList] = useState<App[]>([]);
@@ -1457,6 +1614,7 @@ const TABS = [
   { id: "heroes",   label: "Hero / Slideshow", icon: <Layers className="w-4 h-4" /> },
   { id: "plans",    label: "Planos",            icon: <LayoutList className="w-4 h-4" /> },
   { id: "apps",     label: "Aplicativos",       icon: <LayoutGrid className="w-4 h-4" /> },
+  { id: "stores",   label: "Lojas",             icon: <Building2 className="w-4 h-4" /> },
   { id: "brindes",  label: "Brindes",           icon: <ImageIcon className="w-4 h-4" /> },
   { id: "cities",   label: "Cobertura",         icon: <MapPin className="w-4 h-4" /> },
   { id: "config",   label: "Configurações",     icon: <Settings className="w-4 h-4" /> },
@@ -1524,6 +1682,7 @@ export default function AdminPage() {
         {activeTab === "heroes" && <HeroesTab token={token} />}
         {activeTab === "plans" && <PlansTab token={token} />}
         {activeTab === "apps" && <AppsTab token={token} />}
+        {activeTab === "stores" && <StoresTab token={token} />}
         {activeTab === "brindes" && <BonusProductsTab token={token} />}
         {activeTab === "cities" && <CitiesTab token={token} />}
         {activeTab === "config" && <ConfigTab token={token} />}

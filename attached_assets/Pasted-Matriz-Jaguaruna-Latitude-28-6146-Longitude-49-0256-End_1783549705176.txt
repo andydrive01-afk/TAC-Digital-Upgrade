@@ -1,0 +1,62 @@
+Matriz - Jaguaruna
+Latitude: -28.6146
+Longitude: -49.0256
+Endereço: Rua Engenheiro Annes Gualberto, 1236 — Centro
+Cidade: Jaguaruna — SC
+Link como chegar: https://www.google.com/maps?q=-28.6146,-49.0256
+
+Unidade Içara
+Latitude: -28.7118
+Longitude: -49.3032
+Endereço: Rodovia SC-445, 4810 — Centro
+Cidade: Içara — SC
+Link como chegar: https://www.google.com/maps?q=-28.7118,-49.3032
+
+Unidade Morro da Fumaça
+Latitude: -28.653284
+Longitude: -49.209999
+Endereço: Endereço: R. Pref. Virgínio Maccari, 126 - Centro
+Cidade: Morro da Fumaça - SC
+Link como chegar: https://www.google.com/maps?q=-28.653284072875977,-49.209999084472656&z=17&hl=pt-BR
+
+Unidade Balneário Rincão
+Latitude: -28.822521
+Longitude: -49.222919
+Endereço: Av. Leoberto Leal, 327 - Centro
+Cidade: Balneário Rincão - SC
+Link como chegar: https://www.google.com/maps/place/28%C2%B049'21.1%22S+49%C2%B013'22.5%22W/@-28.8225212,-49.2251082,17z/data=!3m1!4b1!4m5!3m4!1s0x0:0xac9a80847b1b8396!8m2!3d-28.8225212!4d-49.2229195?hl=pt-BR
+
+Unidade Sangão
+Latitude: -28.668840
+Longitude: -49.106110
+Endereço: R. João José Silvano - Morro Grande
+Cidade: Sangão - SC
+Link como chegar: https://www.google.com/maps/place/28%C2%B040'07.8%22S+49%C2%B006'22.0%22W/@-28.6688404,-49.1082983,17z/data=!3m1!4b1!4m5!3m4!1s0x0:0x9a0b6e387ffb6e81!8m2!3d-28.6688404!4d-49.1061096?hl=pt-BR
+
+Unidade Treze de Maio
+Latitude: -28.558813
+Longitude: -49.149606
+Endereço: R. Ademar Ghisi
+Cidade: Treze de Maio, SC
+Link como chegar: https://www.google.com/maps/place/28%C2%B033'31.7%22S+49%C2%B008'58.6%22W/@-28.558813,-49.1517947,17z/data=!3m1!4b1!4m6!3m5!1s0!7e2!8m2!3d-28.558813!4d-49.1496057
+
+Unidade Balneário Esplanada
+Latitude: -28.559253
+Longitude: -49.186591
+Endereço: R. Antônio Lima, S/N - Balneário Esplanada
+Cidade: Jaguaruna - SC
+Link como chegar: https://maps.google.com/?cid=17105075346311767577&g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAMYASAF&hl=pt-BR&gl=BR&source=embed
+
+Unidade Balneário Campo Bom
+Latitude: -28.831110
+Longitude: -49.234690
+Endereço: R. José Cândido Coelho, Balneário Campo Bom
+Cidade: Jaguaruna - SC
+Link como chegar: https://maps.google.com/?cid=7982292855595746525&g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAMYASAF&hl=pt-BR&gl=BR&source=embed
+
+Unidade Balneário Camacho
+Latitude: -28.474635
+Longitude: -49.030991
+Endereço: Rodovia Claudino Abel Botega, Balneário Camacho
+Cidade: Jaguaruna - SC
+Link como chegar: https://maps.google.com/?cid=12227651356689930108&g_mp=CiVnb29nbGUubWFwcy5wbGFjZXMudjEuUGxhY2VzLkdldFBsYWNlEAMYASAF&hl=pt-BR&gl=BR&source=embed

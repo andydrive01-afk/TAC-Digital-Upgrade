@@ -1,5 +1,5 @@
 import { db } from "@workspace/db";
-import { heroes, plans, coverageCities, siteConfig, apps } from "@workspace/db";
+import { heroes, plans, coverageCities, siteConfig, apps, stores } from "@workspace/db";
 import { count } from "drizzle-orm";
 
 let seeded = false;
@@ -62,6 +62,21 @@ export async function seedDefaultData() {
       { key: "google_place_id", value: "" },
       { key: "logo_url", value: "" },
       { key: "favicon_url", value: "" },
+    ]);
+  }
+
+  const [storeCount] = await db.select({ c: count() }).from(stores);
+  if ((storeCount?.c ?? 0) === 0) {
+    await db.insert(stores).values([
+      { name: "Matriz Jaguaruna",        address: "Rua Engenheiro Annes Gualberto, 1236 — Centro", city: "Jaguaruna — SC",        lat: "-28.6146",     lng: "-49.0256",     mapsUrl: "https://www.google.com/maps?q=-28.6146,-49.0256",                                                                                                                                                  order: 0, active: true },
+      { name: "Unidade Içara",           address: "Rodovia SC-445, 4810 — Centro",                 city: "Içara — SC",            lat: "-28.7118",     lng: "-49.3032",     mapsUrl: "https://www.google.com/maps?q=-28.7118,-49.3032",                                                                                                                                                  order: 1, active: true },
+      { name: "Unidade Morro da Fumaça", address: "R. Pref. Virgínio Maccari, 126 — Centro",       city: "Morro da Fumaça — SC",  lat: "-28.653284",   lng: "-49.209999",   mapsUrl: "https://www.google.com/maps?q=-28.653284,-49.209999",                                                                                                                                              order: 2, active: true },
+      { name: "Unidade Balneário Rincão",address: "Av. Leoberto Leal, 327 — Centro",               city: "Balneário Rincão — SC", lat: "-28.822521",   lng: "-49.222919",   mapsUrl: "https://www.google.com/maps/place/28%C2%B049'21.1%22S+49%C2%B013'22.5%22W/@-28.8225212,-49.2251082,17z",                                                                                      order: 3, active: true },
+      { name: "Unidade Sangão",          address: "R. João José Silvano — Morro Grande",           city: "Sangão — SC",           lat: "-28.668840",   lng: "-49.106110",   mapsUrl: "https://www.google.com/maps/place/28%C2%B040'07.8%22S+49%C2%B006'22.0%22W/@-28.6688404,-49.1082983,17z",                                                                                      order: 4, active: true },
+      { name: "Unidade Treze de Maio",   address: "R. Ademar Ghisi",                               city: "Treze de Maio — SC",    lat: "-28.558813",   lng: "-49.149606",   mapsUrl: "https://www.google.com/maps/place/28%C2%B033'31.7%22S+49%C2%B008'58.6%22W/@-28.558813,-49.1517947,17z",                                                                                      order: 5, active: true },
+      { name: "Unidade Bal. Esplanada",  address: "R. Antônio Lima, S/N — Balneário Esplanada",   city: "Jaguaruna — SC",        lat: "-28.559253",   lng: "-49.186591",   mapsUrl: "https://maps.google.com/?cid=17105075346311767577&hl=pt-BR&gl=BR",                                                                                                                              order: 6, active: true },
+      { name: "Unidade Bal. Campo Bom",  address: "R. José Cândido Coelho — Balneário Campo Bom", city: "Jaguaruna — SC",        lat: "-28.831110",   lng: "-49.234690",   mapsUrl: "https://maps.google.com/?cid=7982292855595746525&hl=pt-BR&gl=BR",                                                                                                                               order: 7, active: true },
+      { name: "Unidade Bal. Camacho",    address: "Rodovia Claudino Abel Botega — Bal. Camacho",  city: "Jaguaruna — SC",        lat: "-28.474635",   lng: "-49.030991",   mapsUrl: "https://maps.google.com/?cid=12227651356689930108&hl=pt-BR&gl=BR",                                                                                                                              order: 8, active: true },
     ]);
   }
 
