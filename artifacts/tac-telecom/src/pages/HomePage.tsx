@@ -154,42 +154,45 @@ function StoreMapSection({ stores }: { stores: Store[] }) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-3xl overflow-hidden border border-border/60 shadow-xl">
 
             {/* ── Left: store list ── */}
-            <div className="bg-card flex flex-col">
+            <div className="flex flex-col" style={{ background: "#0a0a0a" }}>
               <div className="px-8 pt-8 pb-5">
-                <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-2">Onde nos Encontrar?</h2>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-2 text-white">Onde nos Encontrar?</h2>
+                <p className="text-sm leading-relaxed" style={{ color: "#a0a0a0" }}>
                   Sempre tem uma loja perto de você!{" "}
-                  <span className="text-primary font-medium">Clique e veja o mais próximo de você.</span>
+                  <span className="font-medium" style={{ color: "#22c55e" }}>Clique e veja o mais próximo de você.</span>
                 </p>
               </div>
 
-              <div className="flex-1 overflow-y-auto divide-y divide-border/50 max-h-[420px] lg:max-h-none">
+              <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-2 max-h-[420px] lg:max-h-none">
                 {stores.map(store => {
                   const isSelected = store.id === selectedId;
                   return (
                     <button
                       key={store.id}
                       onClick={() => setSelectedId(store.id)}
-                      className={`w-full flex items-start justify-between gap-3 px-8 py-4 text-left transition-colors group ${
-                        isSelected ? "bg-primary/8 border-l-4 border-l-primary" : "hover:bg-muted/50 border-l-4 border-l-transparent"
-                      }`}
+                      className="w-full flex items-start justify-between gap-3 px-5 py-3.5 rounded-xl text-left transition-all duration-150"
+                      style={isSelected
+                        ? { background: "#22c55e", border: "2px solid #22c55e" }
+                        : { background: "transparent", border: "2px solid #22c55e" }
+                      }
                     >
                       <div className="flex items-start gap-3 min-w-0">
-                        <MapPin className={`w-4 h-4 mt-0.5 shrink-0 transition-colors ${isSelected ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`} />
+                        <MapPin className="w-4 h-4 mt-0.5 shrink-0" style={{ color: isSelected ? "#000" : "#22c55e" }} />
                         <div className="min-w-0">
-                          <p className={`font-semibold text-sm truncate transition-colors ${isSelected ? "text-primary" : "text-foreground"}`}>
+                          <p className="font-semibold text-sm truncate" style={{ color: isSelected ? "#000" : "#fff" }}>
                             {store.name}
                           </p>
                           {isSelected && (
                             <div className="mt-1 space-y-0.5">
-                              {store.address && <p className="text-xs text-muted-foreground leading-relaxed">{store.address}</p>}
-                              {store.city && <p className="text-xs text-muted-foreground/60">{store.city}</p>}
+                              {store.address && <p className="text-xs leading-relaxed" style={{ color: "#1a1a1a" }}>{store.address}</p>}
+                              {store.city && <p className="text-xs" style={{ color: "#333" }}>{store.city}</p>}
                               {store.mapsUrl && (
                                 <a
                                   href={store.mapsUrl}
                                   target="_blank" rel="noopener noreferrer"
                                   onClick={e => e.stopPropagation()}
-                                  className="inline-flex items-center gap-1 text-primary text-xs font-semibold hover:underline mt-1.5"
+                                  className="inline-flex items-center gap-1 text-xs font-bold hover:underline mt-1.5"
+                                  style={{ color: "#000" }}
                                 >
                                   <ExternalLink className="w-3 h-3" />
                                   Como chegar
@@ -199,7 +202,10 @@ function StoreMapSection({ stores }: { stores: Store[] }) {
                           )}
                         </div>
                       </div>
-                      <ChevronRight className={`w-4 h-4 shrink-0 mt-0.5 transition-transform ${isSelected ? "text-primary rotate-90" : "text-muted-foreground/40"}`} />
+                      <ChevronRight
+                        className="w-4 h-4 shrink-0 mt-0.5 transition-transform"
+                        style={{ color: isSelected ? "#000" : "#22c55e", transform: isSelected ? "rotate(90deg)" : undefined }}
+                      />
                     </button>
                   );
                 })}
