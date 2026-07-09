@@ -431,6 +431,16 @@ export default function HomePage() {
             <a href="#contato" className="text-muted-foreground hover:text-primary transition-colors">Contato</a>
           </nav>
 
+          {/* Desktop phone CTA */}
+          <a
+            href="https://wa.me/554836600800"
+            target="_blank" rel="noopener noreferrer"
+            className="hidden lg:flex flex-col items-center leading-tight px-3 py-1.5 rounded-lg hover:bg-primary/10 transition-colors group"
+          >
+            <span className="text-[10px] font-black tracking-widest text-primary uppercase group-hover:text-primary">SUPORTE 24H</span>
+            <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">(48) 3660-0800</span>
+          </a>
+
           {/* Desktop action links */}
           <div className="hidden md:flex items-center gap-1">
             <a
@@ -471,6 +481,19 @@ export default function HomePage() {
         {/* Mobile dropdown */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-md px-4 py-3 flex flex-col gap-1">
+            <a
+              href="https://wa.me/554836600800"
+              target="_blank" rel="noopener noreferrer"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-primary/10 transition-colors"
+            >
+              <Phone className="w-4 h-4 text-primary shrink-0" />
+              <div className="flex flex-col leading-tight">
+                <span className="text-[10px] font-black tracking-widest text-primary uppercase">SUPORTE 24H</span>
+                <span className="text-sm font-bold text-foreground">(48) 3660-0800</span>
+              </div>
+            </a>
+            <div className="my-1 border-t border-border/50" />
             <a href="#planos" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">Planos</a>
             <a href="#cobertura" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">Cobertura</a>
             <a href="#contato" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">Contato</a>
