@@ -18,7 +18,7 @@ const WHATSAPP_LINK = "https://wa.me/554836600800";
 
 // ── Static fallbacks (used while loading or on API error) ────────────────────
 const STATIC_CITIES = [
-  "Jaguaruna", "Tubarão", "Criciúma", "Laguna", "Imbituba", "Içara", "Sangão", "Pedras Grandes",
+  "Jaguaruna", "Içara", "Morro da Fumaça", "Sangão", "Treze de Maio", "Balneário Rincão",
 ];
 
 const STATIC_REVIEWS = [
@@ -382,6 +382,11 @@ export default function HomePage() {
     { value: "6",       label: "Cidades Atendidas" },
   ]);
   const [coverageSubmitted, setCoverageSubmitted] = useState(false);
+  const [coverageName, setCoverageName] = useState("");
+  const [coverageCpf, setCoverageCpf] = useState("");
+  const [coverageStreet, setCoverageStreet] = useState("");
+  const [coverageCity, setCoverageCity] = useState("");
+  const [coverageWhatsappUrl, setCoverageWhatsappUrl] = useState(WHATSAPP_LINK);
 
   useEffect(() => {
     fetch("/api/content/heroes")
@@ -478,6 +483,8 @@ export default function HomePage() {
 
   const handleCoverageSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const msg = `Olá! Quero saber: tem disponibilidade na minha rua? Nome: ${coverageName}, CPF: ${coverageCpf}, Endereço: ${coverageStreet} - ${coverageCity} — SC`;
+    setCoverageWhatsappUrl(`https://wa.me/554836600800?text=${encodeURIComponent(msg)}`);
     setCoverageSubmitted(true);
   };
 
@@ -796,13 +803,9 @@ export default function HomePage() {
           <div className="container relative z-10 mx-auto px-4 max-w-4xl">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-6">Consultar cobertura na sua rua</h2>
-              <div className="flex flex-wrap justify-center gap-4 text-sm font-semibold text-primary/80">
-                <span>Internet fibra em Jaguaruna</span>
-                <span className="hidden sm:inline">•</span>
-                <span>Fibra óptica em Tubarão</span>
-                <span className="hidden sm:inline">•</span>
-                <span>Internet gamer em Criciúma</span>
-              </div>
+              <p className="text-sm font-semibold text-primary/80">
+                Nos envie seu endereço para verificar sua disponibilidade
+              </p>
             </div>
 
             <Card className="bg-card border-border/50 p-6 md:p-8">
@@ -810,15 +813,44 @@ export default function HomePage() {
                 <form onSubmit={handleCoverageSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="street">Rua e Bairro</Label>
-                      <Input id="street" placeholder="Ex: Av. Principal, Centro" required className="h-12" />
+                      <Label htmlFor="coverage-name">Nome completo</Label>
+                      <Input
+                        id="coverage-name"
+                        placeholder="Ex: João da Silva"
+                        required
+                        className="h-12"
+                        value={coverageName}
+                        onChange={e => setCoverageName(e.target.value)}
+                      />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="city">Cidade</Label>
-                      <Select required>
-                        <SelectTrigger className="h-12"><SelectValue placeholder="Selecione sua cidade" /></SelectTrigger>
+                      <Label htmlFor="coverage-cpf">CPF</Label>
+                      <Input
+                        id="coverage-cpf"
+                        placeholder="Ex: 000.000.000-00"
+                        required
+                        className="h-12"
+                        value={coverageCpf}
+                        onChange={e => setCoverageCpf(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="coverage-street">Rua e Bairro</Label>
+                      <Input
+                        id="coverage-street"
+                        placeholder="Ex: Av. Principal, Centro"
+                        required
+                        className="h-12"
+                        value={coverageStreet}
+                        onChange={e => setCoverageStreet(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="coverage-city">Cidade</Label>
+                      <Select required value={coverageCity} onValueChange={setCoverageCity}>
+                        <SelectTrigger id="coverage-city" className="h-12"><SelectValue placeholder="Selecione sua cidade" /></SelectTrigger>
                         <SelectContent>
-                          {cities.map(city => <SelectItem key={city} value={city.toLowerCase()}>{city}</SelectItem>)}
+                          {cities.map(city => <SelectItem key={city} value={city}>{city}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -831,7 +863,7 @@ export default function HomePage() {
                   <h3 className="text-2xl font-bold mb-2">Quase lá!</h3>
                   <p className="text-muted-foreground mb-8">Para agilizar seu atendimento e confirmar a disponibilidade exata, fale com a gente no WhatsApp.</p>
                   <Button size="lg" className="h-14 px-8 text-lg" asChild>
-                    <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer"><MessageCircle className="w-5 h-5 mr-2" />Fale no WhatsApp para agilizar</a>
+                    <a href={coverageWhatsappUrl} target="_blank" rel="noreferrer"><MessageCircle className="w-5 h-5 mr-2" />Fale no WhatsApp para agilizar</a>
                   </Button>
                 </div>
               )}

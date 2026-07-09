@@ -65,14 +65,12 @@ async function _doSeed() {
     const [cityCount] = await db.select({ c: count() }).from(coverageCities);
     if ((cityCount?.c ?? 0) === 0) {
       await db.insert(coverageCities).values([
-        { name: "Jaguaruna",     state: "SC", active: true, order: 0 },
-        { name: "Tubarão",       state: "SC", active: true, order: 1 },
-        { name: "Criciúma",      state: "SC", active: true, order: 2 },
-        { name: "Laguna",        state: "SC", active: true, order: 3 },
-        { name: "Imbituba",      state: "SC", active: true, order: 4 },
-        { name: "Içara",         state: "SC", active: true, order: 5 },
-        { name: "Sangão",        state: "SC", active: true, order: 6 },
-        { name: "Pedras Grandes",state: "SC", active: true, order: 7 },
+        { name: "Jaguaruna",        state: "SC", active: true, order: 0 },
+        { name: "Içara",            state: "SC", active: true, order: 1 },
+        { name: "Morro da Fumaça",  state: "SC", active: true, order: 2 },
+        { name: "Sangão",           state: "SC", active: true, order: 3 },
+        { name: "Treze de Maio",    state: "SC", active: true, order: 4 },
+        { name: "Balneário Rincão", state: "SC", active: true, order: 5 },
       ]);
     }
 
