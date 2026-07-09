@@ -3,8 +3,19 @@ import { heroes, plans, coverageCities, siteConfig, apps, stores } from "@worksp
 import { count } from "drizzle-orm";
 
 let seeded = false;
+let seedingPromise: Promise<void> | null = null;
 
 export async function seedDefaultData() {
+  if (seeded) return;
+  if (seedingPromise) return seedingPromise;
+
+  seedingPromise = _doSeed().finally(() => {
+    seedingPromise = null;
+  });
+  return seedingPromise;
+}
+
+async function _doSeed() {
   if (seeded) return;
 
   try {
