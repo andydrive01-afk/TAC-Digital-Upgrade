@@ -30,13 +30,24 @@ export async function seedDefaultData() {
   const [planCount] = await db.select({ c: count() }).from(plans);
   if ((planCount?.c ?? 0) === 0) {
     await db.insert(plans).values([
-      { tab: "fibra", name: "Fibra 400 Mega", speed: "400", price: "89", priceCents: "90", badge: "", isFeatured: false, icons: ["wifi","speed","support24","install24"], features: ["Streaming HD sem travar","Wi-Fi incluso","Suporte 24h","Instalação em até 24h"], planKey: "fibra400", order: 0, active: true },
-      { tab: "fibra", name: "Fibra 600 Mega", speed: "600", price: "99", priceCents: "90", badge: "", isFeatured: false, icons: ["wifi6","streaming4k","support24","install24"], features: ["Streaming 4K","Wi-Fi 6","Suporte 24h","Instalação prioritária"], planKey: "fibra600", order: 1, active: true },
-      { tab: "fibra", name: "Fibra 800 Mega", speed: "800", price: "109", priceCents: "90", badge: "MAIS CONTRATADO", isFeatured: true, icons: ["wifi6","streaming4k","homeoffice","gaming"], features: ["Streaming 4K+","Wi-Fi 6 AX","Home office de alta performance","Gaming sem lag"], planKey: "fibra800", order: 2, active: true },
-      { tab: "fibra", name: "Fibra 1 Giga", speed: "1000", price: "119", priceCents: "90", badge: "", isFeatured: false, icons: ["speed","multidevice","wifi6","support24"], features: ["Velocidade máxima","Múltiplos dispositivos simultâneos","Wi-Fi 6 AX incluso","Suporte VIP 24h"], planKey: "fibra1g", order: 3, active: true },
-      { tab: "tv", name: "TAC TV Essencial", speed: "400", price: "119", priceCents: "90", badge: "", isFeatured: false, icons: ["tv","channels","wifi","support24"], features: ["Canais ao vivo","400 Mega fibra incluso","Suporte 24h","Instalação em até 24h"], planKey: "tv400", order: 0, active: true },
-      { tab: "tv", name: "TAC TV Plus", speed: "600", price: "139", priceCents: "90", badge: "MAIS POPULAR", isFeatured: true, icons: ["tv","channels","premium","wifi6"], features: ["Mais canais ao vivo","600 Mega fibra incluso","Conteúdo premium","Suporte VIP 24h"], planKey: "tv600", order: 1, active: true },
-      { tab: "tv", name: "TAC TV Premium", speed: "1000", price: "169", priceCents: "90", badge: "", isFeatured: false, icons: ["tv","premium","wifi6","support24"], features: ["Canais premium + esportes","1 Giga fibra incluso","Wi-Fi 6 AX incluso","Suporte VIP 24h"], planKey: "tv1g", order: 2, active: true },
+      // ── Fibra ──────────────────────────────────────────────────────────────
+      { tab: "fibra", name: "Plano Essencial",        speed: "550",  price: "109", priceCents: "90", badge: "",               isFeatured: false, icons: ["wifi6","install24","tv","support24"],  features: ["550 MB de internet","Instalação GRÁTIS","Wi-Fi 6 comodato","TAC TV + TAC Music (aplicativos)","Suporte 24h","1 cabeamento até 15m"], bonusIds: [], planKey: "fibra-essencial",    order: 0, active: true },
+      { tab: "fibra", name: "Plano Família",           speed: "650",  price: "119", priceCents: "90", badge: "MAIS CONTRATADO", isFeatured: true,  icons: ["wifi6","tv","streaming","install24"],  features: ["650 MB de internet","Instalação grátis","Roteador Wi-Fi Premium","TAC PLAY — TV ao vivo no celular","Deezer — músicas sem anúncios","Looke — séries e filmes"], bonusIds: [], planKey: "fibra-familia",      order: 1, active: true },
+      { tab: "fibra", name: "Plano TAC Indica",        speed: "700",  price: "129", priceCents: "90", badge: "",               isFeatured: false, icons: ["wifi6","tv","gaming","install24"],     features: ["700 MB de internet","Instalação grátis","Roteador Wi-Fi Premium","TAC PLAY — TV ao vivo no celular","ExitLag — jogue sem travamentos","+1 aplicativo de sua escolha"], bonusIds: [], planKey: "fibra-indica",      order: 2, active: true },
+      { tab: "fibra", name: "Plano Casa Completa",     speed: "800",  price: "149", priceCents: "90", badge: "",               isFeatured: false, icons: ["wifi6","tv","streaming","homeoffice"],  features: ["800 MB de internet","Instalação grátis","Roteador Wi-Fi Premium","TAC PLAY — TV ao vivo no celular","Deezer — músicas sem anúncios","Looke — séries e filmes"], bonusIds: [], planKey: "fibra-casa",         order: 3, active: true },
+      { tab: "fibra", name: "Plano Empresa",           speed: "650",  price: "159", priceCents: "90", badge: "",               isFeatured: false, icons: ["upload","support24","install24","wifi6"], features: ["650 MB de internet","Instalação grátis","2 roteadores Wi-Fi Premium","Suporte premium prioritário","70% de velocidade de upload","Visita técnica em até 8h úteis"], bonusIds: [], planKey: "fibra-empresa",      order: 4, active: true },
+      { tab: "fibra", name: "Plano Premium",           speed: "1000", price: "199", priceCents: "90", badge: "",               isFeatured: false, icons: ["wifi6","tv","streaming","support24"],  features: ["1.000 MB de internet","Instalação GRÁTIS","Wi-Fi 6 comodato","TAC TV + Looke + Deezer + MAX","Suporte 24h","2 cabeamentos até 15m cada"], bonusIds: [], planKey: "fibra-premium",      order: 5, active: true },
+      // ── TAC TV ─────────────────────────────────────────────────────────────
+      { tab: "tv", name: "TV Life Line",   speed: "0",   price: "",    priceCents: "",   badge: "CONSULTE-NOS",   isFeatured: false, icons: ["tv","channels"], features: ["Consulte Taxa de Instalação","Disponível em até 4 Pontos","+De 40 Canais"], bonusIds: [], planKey: "tv-lifeline",  order: 0, active: true },
+      { tab: "tv", name: "TV Start HD",    speed: "0",   price: "79",  priceCents: "90", badge: "",               isFeatured: false, icons: ["tv","channels","install24"], features: ["Instalação Grátis (1 Ponto)","Disponível em até 4 Pontos","+De 60 Canais"], bonusIds: [], planKey: "tv-start",    order: 1, active: true },
+      { tab: "tv", name: "TV Top HD",      speed: "0",   price: "119", priceCents: "90", badge: "MAIS POPULAR",   isFeatured: true,  icons: ["tv","channels","premium","install24"], features: ["Instalação Grátis (2 Pontos)","Disponível em até 4 Pontos","+De 90 Canais"], bonusIds: [], planKey: "tv-top",     order: 2, active: true },
+      { tab: "tv", name: "TV Premium HD",  speed: "0",   price: "149", priceCents: "90", badge: "",               isFeatured: false, icons: ["tv","premium","channels","install24"], features: ["Instalação Grátis (2 Pontos)","Disponível em até 4 Pontos","+De 110 Canais"], bonusIds: [], planKey: "tv-premium", order: 3, active: true },
+      { tab: "tv", name: "TV Plus HD",     speed: "0",   price: "209", priceCents: "70", badge: "",               isFeatured: false, icons: ["tv","premium","channels","install24"], features: ["Instalação Grátis","Disponível em até 4 Pontos","Toda Grade de Canais Disponível"], bonusIds: [], planKey: "tv-plus",    order: 4, active: true },
+      // ── Telefonia ──────────────────────────────────────────────────────────
+      { tab: "telefone", name: "50 Minutos",   speed: "50",   price: "29",  priceCents: "90", badge: "",             isFeatured: false, icons: ["phone","support24"], features: ["50 minutos","Fixo e móvel do Brasil","Identificador de chamadas","Portabilidade gratuita"], bonusIds: [], planKey: "tel-50",       order: 0, active: true },
+      { tab: "telefone", name: "150 Minutos",  speed: "150",  price: "39",  priceCents: "90", badge: "",             isFeatured: false, icons: ["phone","support24"], features: ["150 minutos","Fixo e móvel do Brasil","Identificador de chamadas","Portabilidade gratuita"], bonusIds: [], planKey: "tel-150",      order: 1, active: true },
+      { tab: "telefone", name: "300 Minutos",  speed: "300",  price: "49",  priceCents: "90", badge: "MAIS POPULAR", isFeatured: true,  icons: ["phone","support24"], features: ["300 minutos","Fixo e móvel do Brasil","Identificador de chamadas","Portabilidade gratuita"], bonusIds: [], planKey: "tel-300",      order: 2, active: true },
+      { tab: "telefone", name: "Ilimitado",    speed: "0",    price: "59",  priceCents: "90", badge: "",             isFeatured: false, icons: ["phone","support24"], features: ["Minutos ilimitados","Fixo e móvel do Brasil","Identificador de chamadas","Portabilidade gratuita"], bonusIds: [], planKey: "tel-ilimitado", order: 3, active: true },
     ]);
   }
 
@@ -62,6 +73,14 @@ export async function seedDefaultData() {
       { key: "google_place_id", value: "" },
       { key: "logo_url", value: "" },
       { key: "favicon_url", value: "" },
+      { key: "stat_1_value", value: "20.000+" },
+      { key: "stat_1_label", value: "Clientes" },
+      { key: "stat_2_value", value: "99.8%" },
+      { key: "stat_2_label", value: "Uptime" },
+      { key: "stat_3_value", value: "+20" },
+      { key: "stat_3_label", value: "Anos no Mercado" },
+      { key: "stat_4_value", value: "6" },
+      { key: "stat_4_label", value: "Cidades Atendidas" },
     ]);
   }
 

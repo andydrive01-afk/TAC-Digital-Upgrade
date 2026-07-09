@@ -1117,6 +1117,30 @@ function ConfigTab({ token }: { token: string }) {
       <h2 className="text-xl font-bold">Configurações do Site</h2>
 
       <Card>
+        <CardHeader><CardTitle className="text-base">Estatísticas (barra abaixo do hero)</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-xs text-muted-foreground">Edite os 4 números e rótulos exibidos na barra de credenciais da página inicial.</p>
+          {([
+            ["stat_1_value", "stat_1_label", "20.000+", "Clientes"],
+            ["stat_2_value", "stat_2_label", "99.8%",   "Uptime"],
+            ["stat_3_value", "stat_3_label", "+20",     "Anos no Mercado"],
+            ["stat_4_value", "stat_4_label", "6",       "Cidades Atendidas"],
+          ] as const).map(([valKey, labelKey, vPh, lPh], i) => (
+            <div key={i} className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Valor {i + 1}</Label>
+                <Input value={cfg[valKey] ?? ""} onChange={e => setCfg({ ...cfg, [valKey]: e.target.value })} placeholder={vPh} />
+              </div>
+              <div className="space-y-1">
+                <Label>Rótulo {i + 1}</Label>
+                <Input value={cfg[labelKey] ?? ""} onChange={e => setCfg({ ...cfg, [labelKey]: e.target.value })} placeholder={lPh} />
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader><CardTitle className="text-base">Identidade Visual</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1">

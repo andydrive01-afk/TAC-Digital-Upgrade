@@ -68,6 +68,10 @@ function SiteLogo({ logoUrl, textSize = "text-2xl" }: { logoUrl?: string; textSi
 // ── Plan Card ────────────────────────────────────────────────────────────────
 function SpeedBadge({ speed, tab }: { speed: string; tab: string }) {
   if (tab === "tv") return <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-4"><span className="text-primary font-black text-xs leading-tight text-center">TAC<br/>TV</span></div>;
+  if (tab === "telefone") {
+    const label = speed === "0" || speed === "" ? "∞\nIlim." : `${speed}\nMin`;
+    return <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-4"><span className="text-primary font-black text-xs leading-tight text-center whitespace-pre-line">{label}</span></div>;
+  }
   const label = speed === "1000" ? "1\nGiga" : `${speed}\nMega`;
   return (
     <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
@@ -88,9 +92,12 @@ function PlanCard({ plan, bonusMap }: { plan: Plan; bonusMap: Map<number, BonusP
         {plan.badge && <Badge className={`w-fit mb-3 ${featured ? "bg-primary text-primary-foreground hover:bg-primary" : ""}`} variant={featured ? "default" : "secondary"}>{plan.badge}</Badge>}
         {plan.tab === "tv" && <CardDescription className="text-base font-semibold text-foreground">{plan.name.replace(/TAC TV\s*/i, "TAC TV · ")}</CardDescription>}
         <SpeedBadge speed={plan.speed} tab={plan.tab} />
-        <CardTitle className="text-4xl font-black">
-          R$ {plan.price}<span className="text-2xl text-muted-foreground">,{plan.priceCents}</span>
-          <span className="text-sm font-normal text-muted-foreground block mt-1">/mês</span>
+        <CardTitle className={plan.price ? "text-4xl font-black" : "text-2xl font-black text-primary"}>
+          {plan.price ? (
+            <>R$ {plan.price}<span className="text-2xl text-muted-foreground">,{plan.priceCents}</span><span className="text-sm font-normal text-muted-foreground block mt-1">/mês</span></>
+          ) : (
+            <>Consulte-nos!<span className="text-sm font-normal text-muted-foreground block mt-1">fale pelo WhatsApp</span></>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1">
@@ -121,7 +128,10 @@ function PlanCard({ plan, bonusMap }: { plan: Plan; bonusMap: Map<number, BonusP
       </CardContent>
       <CardFooter>
         <Button className={`w-full ${featured ? "text-base h-12" : ""}`} asChild data-testid={`button-contratar-${plan.planKey}`}>
-          <Link href={`/contratar?plano=${plan.planKey}`}>Contratar este plano</Link>
+          {plan.price
+            ? <Link href={`/contratar?plano=${plan.planKey}`}>Contratar este plano</Link>
+            : <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">Falar pelo WhatsApp</a>
+          }
         </Button>
       </CardFooter>
     </Card>
@@ -280,7 +290,7 @@ function HeroCarousel({ heroes }: { heroes: Hero[] }) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
-  const [planTab, setPlanTab] = useState<"fibra" | "tv">("fibra");
+  const [planTab, setPlanTab] = useState<"fibra" | "tv" | "telefone">("fibra");
 
   // API data states
   const [heroes, setHeroes] = useState<Hero[]>([]);
@@ -294,6 +304,12 @@ export default function HomePage() {
   const [apps, setApps] = useState<App[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [siteStats, setSiteStats] = useState([
+    { value: "20.000+", label: "Clientes" },
+    { value: "99.8%",   label: "Uptime" },
+    { value: "+20",     label: "Anos no Mercado" },
+    { value: "6",       label: "Cidades Atendidas" },
+  ]);
   const [coverageSubmitted, setCoverageSubmitted] = useState(false);
 
   useEffect(() => {
@@ -323,6 +339,12 @@ export default function HomePage() {
       .then((cfg: Record<string, string>) => {
         if (cfg["logo_url"]) setLogoUrl(cfg["logo_url"]);
         if (cfg["favicon_url"]) setFaviconUrl(cfg["favicon_url"]);
+        setSiteStats([
+          { value: cfg["stat_1_value"] || "20.000+", label: cfg["stat_1_label"] || "Clientes" },
+          { value: cfg["stat_2_value"] || "99.8%",   label: cfg["stat_2_label"] || "Uptime" },
+          { value: cfg["stat_3_value"] || "+20",     label: cfg["stat_3_label"] || "Anos no Mercado" },
+          { value: cfg["stat_4_value"] || "6",       label: cfg["stat_4_label"] || "Cidades Atendidas" },
+        ]);
       })
       .catch(() => {});
 
@@ -369,9 +391,10 @@ export default function HomePage() {
     }
   }, [faviconUrl]);
 
-  const fibraPlans = plans.filter(p => p.tab === "fibra");
-  const tvPlans = plans.filter(p => p.tab === "tv");
-  const visiblePlans = planTab === "fibra" ? fibraPlans : tvPlans;
+  const fibraPlans    = plans.filter(p => p.tab === "fibra");
+  const tvPlans       = plans.filter(p => p.tab === "tv");
+  const telefonePlans = plans.filter(p => p.tab === "telefone");
+  const visiblePlans  = planTab === "fibra" ? fibraPlans : planTab === "tv" ? tvPlans : telefonePlans;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -473,10 +496,12 @@ export default function HomePage() {
         <section className="border-y border-border bg-card/50">
           <div className="container mx-auto px-4 py-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-border/50 text-center">
-              <div><p className="text-3xl font-black">15.000+</p><p className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Clientes</p></div>
-              <div><p className="text-3xl font-black">99.8%</p><p className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Uptime</p></div>
-              <div><p className="text-3xl font-black">+10</p><p className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Anos no Mercado</p></div>
-              <div><p className="text-3xl font-black">{cities.length}</p><p className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">Cidades Atendidas</p></div>
+              {siteStats.map((s, i) => (
+                <div key={i}>
+                  <p className="text-3xl font-black">{s.value}</p>
+                  <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider mt-1">{s.label}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -507,10 +532,10 @@ export default function HomePage() {
 
             {/* Tabs */}
             <div className="flex justify-center mb-10">
-              <div className="inline-flex bg-card border border-border rounded-full p-1 gap-1">
-                {([["fibra", "🌐 Fibra Óptica"], ["tv", "📺 TAC TV"]] as const).map(([id, label]) => (
+              <div className="inline-flex bg-card border border-border rounded-full p-1 gap-1 flex-wrap justify-center">
+                {([["fibra", "🌐 Fibra Óptica"], ["tv", "📺 TAC TV"], ["telefone", "📞 Telefonia"]] as const).map(([id, label]) => (
                   <button key={id} onClick={() => setPlanTab(id)}
-                    className={`px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${planTab === id ? "bg-primary text-primary-foreground shadow-[0_0_12px_rgba(22,163,74,0.3)]" : "text-muted-foreground hover:text-foreground"}`}>
+                    className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${planTab === id ? "bg-primary text-primary-foreground shadow-[0_0_12px_rgba(22,163,74,0.3)]" : "text-muted-foreground hover:text-foreground"}`}>
                     {label}
                   </button>
                 ))}
@@ -518,26 +543,33 @@ export default function HomePage() {
             </div>
 
             {/* Plan Cards */}
-            {visiblePlans.length > 0 ? (
-              <motion.div
-                key={planTab}
-                className={`grid gap-6 max-w-7xl mx-auto ${planTab === "fibra" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4" : "grid-cols-1 md:grid-cols-3 max-w-5xl"}`}
-                variants={containerVariants} initial="hidden" animate="visible"
-              >
-                {visiblePlans.map(plan => (
-                  <motion.div key={plan.id} variants={itemVariants} className={plan.isFeatured ? "lg:-mt-4 lg:mb-4 z-10" : ""}>
-                    <PlanCard plan={plan} bonusMap={bonusMap} />
-                  </motion.div>
-                ))}
-              </motion.div>
-            ) : (
-              // Loading skeleton
-              <div className={`grid gap-6 max-w-7xl mx-auto ${planTab === "fibra" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4" : "grid-cols-1 md:grid-cols-3 max-w-5xl"}`}>
-                {[1, 2, 3, 4].slice(0, planTab === "fibra" ? 4 : 3).map(i => (
-                  <Card key={i} className="animate-pulse h-72"><CardContent className="p-6"><div className="space-y-3"><div className="h-16 w-16 rounded-full bg-muted" /><div className="h-8 bg-muted rounded w-2/3" /><div className="h-4 bg-muted rounded" /><div className="h-4 bg-muted rounded w-4/5" /></div></CardContent></Card>
-                ))}
-              </div>
-            )}
+            {(() => {
+              const gridClass =
+                planTab === "fibra"    ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-w-6xl" :
+                planTab === "tv"       ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl" :
+                                         "grid-cols-1 md:grid-cols-2 lg:grid-cols-4 max-w-6xl";
+              return visiblePlans.length > 0 ? (
+                <motion.div key={planTab} className={`grid gap-6 mx-auto ${gridClass}`}
+                  variants={containerVariants} initial="hidden" animate="visible">
+                  {visiblePlans.map(plan => (
+                    <motion.div key={plan.id} variants={itemVariants} className={plan.isFeatured ? "lg:-mt-4 lg:mb-4 z-10" : ""}>
+                      <PlanCard plan={plan} bonusMap={bonusMap} />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              ) : (
+                <div className={`grid gap-6 mx-auto ${gridClass}`}>
+                  {[1,2,3].map(i => (
+                    <Card key={i} className="animate-pulse h-72"><CardContent className="p-6"><div className="space-y-3"><div className="h-16 w-16 rounded-full bg-muted" /><div className="h-8 bg-muted rounded w-2/3" /><div className="h-4 bg-muted rounded" /><div className="h-4 bg-muted rounded w-4/5" /></div></CardContent></Card>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Legal disclaimer */}
+            <p className="mt-10 max-w-4xl mx-auto text-xs text-muted-foreground/60 text-center leading-relaxed border-t border-border/30 pt-8">
+              Em conformidade com as normas de proteção ao consumidor, a Tac Telecom informa que os serviços de TV e Telefonia são disponibilizados por meio de parcerias comerciais com empresas especializadas que, efetivamente, prestam tais serviços. Por exigências técnicas e regulatórias, estes serviços requerem a conexão com nosso serviço de internet banda larga, estando assim enquadrados como Serviços de Comunicação Multimídia (SCM).
+            </p>
           </div>
         </section>
 
