@@ -112,3 +112,11 @@ export const InsertApp = createInsertSchema(apps);
 export const SelectApp = createSelectSchema(apps);
 export type App = typeof apps.$inferSelect;
 export type InsertAppType = typeof apps.$inferInsert;
+
+export const adminUsers = mysqlTable("admin_users", {
+  id: int("id").autoincrement().primaryKey(),
+  username: varchar("username", { length: 100 }).notNull().unique(),
+  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type AdminUser = typeof adminUsers.$inferSelect;

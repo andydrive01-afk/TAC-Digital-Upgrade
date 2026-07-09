@@ -1,3 +1,5 @@
 - [MySQL local no Replit](mysql-local-replit.md) — MariaDB quebra no sandbox; use MySQL 8.0 (Nix `mysql80`) e nunca `DATABASE_URL` (reservada p/ Postgres do Replit)
 - [Storage local em vez de GCS](local-object-storage.md) — para apps que serão self-hosted, trocar Object Storage do Replit por disco local; cuidado com `import.meta.dirname` em bundles esbuild
 - [MySQL 8.0 TEXT DEFAULT constraint](mysql-text-default.md) — TEXT/BLOB não aceita DEFAULT não-NULL; use VARCHAR(N) nos CREATE TABLE manuais do setup-db
+- [lib/db project references build](db-project-references.md) — após alterar schema em lib/db, rodar `pnpm exec tsc --build` dentro de lib/db antes do tsc do api-server; senão o tsc falha por declarations desatualizadas
+- [JWT admin auth](jwt-admin-auth.md) — auth migrado de ADMIN_PASSWORD para JWT; SESSION_SECRET é obrigatório (startup falha se ausente); adminAuth valida role=="admin"; jwtSign exportado de routes/setup.ts

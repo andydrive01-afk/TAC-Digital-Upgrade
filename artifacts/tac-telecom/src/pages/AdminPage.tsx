@@ -10,6 +10,7 @@ import {
   Plus, Trash2, Pencil, Save, X, Eye, EyeOff,
   ChevronUp, ChevronDown, Check, Image as ImageIcon, Settings,
   MapPin, LayoutList, Layers, Loader2, Monitor, LayoutGrid, Building2,
+  Database, Download, UserPlus, AlertCircle,
 } from "lucide-react";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") ?? "";
@@ -360,6 +361,7 @@ function HeroPreview({ hero }: { hero: Partial<Hero> }) {
 
 // ── LOGIN ──────────────────────────────────────────────────────────────────────
 function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -373,9 +375,9 @@ function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
       const res = await fetch(`${API}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username: username.trim(), password }),
       });
-      if (!res.ok) { setError("Senha incorreta."); return; }
+      if (!res.ok) { setError("Usuário ou senha incorretos."); return; }
       const { token } = await res.json() as { token: string };
       onLogin(token);
     } catch {
@@ -397,16 +399,29 @@ function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="pw">Senha</Label>
+              <Label htmlFor="login-user">Usuário</Label>
+              <Input
+                id="login-user"
+                type="text"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder="Nome de usuário"
+                required
+                autoComplete="username"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="login-pw">Senha</Label>
               <div className="relative">
                 <Input
-                  id="pw"
+                  id="login-pw"
                   type={showPw ? "text" : "password"}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="Senha do administrador"
+                  placeholder="Senha"
                   required
                   className="pr-10"
+                  autoComplete="current-password"
                 />
                 <button
                   type="button"
@@ -1633,6 +1648,285 @@ function AppsTab({ token }: { token: string }) {
   );
 }
 
+// ── USERS TAB ─────────────────────────────────────────────────────────────────
+type AdminUser = { id: number; username: string; createdAt: string | null };
+
+function UsersTab({ token }: { token: string }) {
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newUser, setNewUser] = useState("");
+  const [newPw, setNewPw] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [addErr, setAddErr] = useState("");
+  const [showPw, setShowPw] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch(`${API}/admin/users`, { headers: authHeader(token) });
+    if (res.ok) setUsers(await res.json() as AdminUser[]);
+    setLoading(false);
+  }, [token]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const add = async () => {
+    setAddErr("");
+    if (!newUser.trim()) { setAddErr("Informe o nome de usuário."); return; }
+    if (newPw.length < 6) { setAddErr("Senha deve ter pelo menos 6 caracteres."); return; }
+    setAdding(true);
+    const res = await fetch(`${API}/admin/users`, {
+      method: "POST",
+      headers: authHeader(token),
+      body: JSON.stringify({ username: newUser.trim(), password: newPw }),
+    });
+    const data = await res.json() as { error?: string };
+    if (!res.ok) { setAddErr(data.error ?? "Erro ao criar usuário."); setAdding(false); return; }
+    setNewUser(""); setNewPw(""); setAdding(false);
+    await load();
+  };
+
+  const del = async (user: AdminUser) => {
+    if (!confirm(`Remover o usuário "${user.username}"? Esta ação não pode ser desfeita.`)) return;
+    const res = await fetch(`${API}/admin/users/${user.id}`, { method: "DELETE", headers: authHeader(token) });
+    if (!res.ok) {
+      const data = await res.json() as { error?: string };
+      alert(data.error ?? "Erro ao remover usuário.");
+      return;
+    }
+    await load();
+  };
+
+  if (loading) return <p className="text-muted-foreground py-8 text-center">Carregando...</p>;
+
+  return (
+    <div className="space-y-6 max-w-xl">
+      <div>
+        <h2 className="text-xl font-bold">Usuários Admin</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">Gerencie quem tem acesso ao painel.</p>
+      </div>
+
+      {/* Current users list */}
+      <div className="space-y-2">
+        {users.map(u => (
+          <Card key={u.id}>
+            <CardContent className="py-3 px-4 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <span className="text-sm font-bold text-primary">{u.username.charAt(0).toUpperCase()}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm">{u.username}</p>
+                {u.createdAt && (
+                  <p className="text-xs text-muted-foreground">
+                    Criado em {new Date(u.createdAt).toLocaleDateString("pt-BR")}
+                  </p>
+                )}
+              </div>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="w-8 h-8 text-destructive hover:text-destructive shrink-0"
+                onClick={() => void del(u)}
+                title="Remover usuário"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
+        {users.length === 0 && (
+          <p className="text-muted-foreground text-center py-6">Nenhum usuário encontrado.</p>
+        )}
+      </div>
+
+      {/* Add new user */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <UserPlus className="w-4 h-4 text-primary" />
+            Adicionar usuário
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1">
+            <Label>Usuário</Label>
+            <Input
+              value={newUser}
+              onChange={e => setNewUser(e.target.value)}
+              placeholder="Ex: atendimento"
+              autoComplete="off"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label>Senha</Label>
+            <div className="relative">
+              <Input
+                type={showPw ? "text" : "password"}
+                value={newPw}
+                onChange={e => setNewPw(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+                className="pr-10"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowPw(v => !v)}
+              >
+                {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+          {addErr && (
+            <p className="text-sm text-destructive flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 shrink-0" />{addErr}
+            </p>
+          )}
+          <Button size="sm" onClick={() => void add()} disabled={adding}>
+            {adding ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Criando...</> : <><Plus className="w-4 h-4 mr-2" />Criar usuário</>}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// ── DATABASE TAB ──────────────────────────────────────────────────────────────
+function DatabaseTab({ token }: { token: string }) {
+  const [exporting, setExporting] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const fileRef = React.useRef<HTMLInputElement>(null);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch(`${API}/admin/db-export`, { headers: authHeader(token) });
+      if (!res.ok) { alert("Erro ao exportar."); return; }
+      const blob = await res.blob();
+      const date = new Date().toISOString().split("T")[0];
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `tac-telecom-backup-${date}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!importFile) return;
+    if (!confirm("Importar este backup irá SUBSTITUIR todos os dados de conteúdo (planos, heroes, cidades, etc.). Os usuários admin não serão afetados. Continuar?")) return;
+    setImporting(true);
+    setImportResult(null);
+    try {
+      const text = await importFile.text();
+      const json = JSON.parse(text) as unknown;
+      const res = await fetch(`${API}/admin/db-import`, {
+        method: "POST",
+        headers: authHeader(token),
+        body: JSON.stringify(json),
+      });
+      const data = await res.json() as { ok?: boolean; counts?: Record<string, number>; error?: string };
+      if (res.ok && data.ok) {
+        const summary = data.counts
+          ? Object.entries(data.counts).map(([k, v]) => `${v} ${k}`).join(", ")
+          : "";
+        setImportResult({ ok: true, message: `Importado com sucesso! ${summary}` });
+        setImportFile(null);
+        if (fileRef.current) fileRef.current.value = "";
+      } else {
+        setImportResult({ ok: false, message: data.error ?? "Erro ao importar." });
+      }
+    } catch (err) {
+      setImportResult({ ok: false, message: `Arquivo inválido: ${String(err)}` });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-xl">
+      <div>
+        <h2 className="text-xl font-bold">Banco de Dados</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">Exporte ou importe todos os dados de conteúdo do site.</p>
+      </div>
+
+      {/* Export */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Download className="w-4 h-4 text-primary" />
+            Exportar backup
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Baixa um arquivo <code className="bg-muted px-1 rounded text-xs">.json</code> com todos
+            os dados do site (planos, heroes, cidades, lojas, apps, configurações). Usuários admin não
+            são incluídos no backup.
+          </p>
+          <Button size="sm" variant="outline" onClick={() => void handleExport()} disabled={exporting}>
+            {exporting
+              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Exportando...</>
+              : <><Download className="w-4 h-4 mr-2" />Exportar backup</>}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Import */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Upload className="w-4 h-4 text-primary" />
+            Importar backup
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <p>
+              <strong>Atenção:</strong> a importação <strong>substitui todos os dados de conteúdo</strong> pelo
+              arquivo selecionado. Esta ação não pode ser desfeita. Faça um export antes de importar.
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label>Arquivo de backup (.json)</Label>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".json,application/json"
+              onChange={e => { setImportFile(e.target.files?.[0] ?? null); setImportResult(null); }}
+              className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border file:border-border file:text-xs file:font-medium file:bg-background hover:file:bg-muted cursor-pointer"
+            />
+          </div>
+          {importResult && (
+            <p className={`text-sm flex items-center gap-1.5 ${importResult.ok ? "text-green-600 dark:text-green-400" : "text-destructive"}`}>
+              {importResult.ok ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+              {importResult.message}
+            </p>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => void handleImport()}
+            disabled={!importFile || importing}
+          >
+            {importing
+              ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Importando...</>
+              : <><Upload className="w-4 h-4 mr-2" />Importar</>}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Setup DB (existing functionality) */}
+      <SetupDbCard token={token} />
+    </div>
+  );
+}
+
 // ── MAIN ADMIN PAGE ───────────────────────────────────────────────────────────
 const TABS = [
   { id: "heroes",   label: "Hero / Slideshow", icon: <Layers className="w-4 h-4" /> },
@@ -1642,6 +1936,8 @@ const TABS = [
   { id: "brindes",  label: "Brindes",           icon: <ImageIcon className="w-4 h-4" /> },
   { id: "cities",   label: "Cobertura",         icon: <MapPin className="w-4 h-4" /> },
   { id: "config",   label: "Configurações",     icon: <Settings className="w-4 h-4" /> },
+  { id: "usuarios", label: "Usuários",          icon: <Users className="w-4 h-4" /> },
+  { id: "database", label: "Banco de Dados",    icon: <Database className="w-4 h-4" /> },
 ] as const;
 
 type TabId = typeof TABS[number]["id"];
@@ -1703,13 +1999,15 @@ export default function AdminPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-5xl">
-        {activeTab === "heroes" && <HeroesTab token={token} />}
-        {activeTab === "plans" && <PlansTab token={token} />}
-        {activeTab === "apps" && <AppsTab token={token} />}
-        {activeTab === "stores" && <StoresTab token={token} />}
-        {activeTab === "brindes" && <BonusProductsTab token={token} />}
-        {activeTab === "cities" && <CitiesTab token={token} />}
-        {activeTab === "config" && <ConfigTab token={token} />}
+        {activeTab === "heroes"   && <HeroesTab token={token} />}
+        {activeTab === "plans"    && <PlansTab token={token} />}
+        {activeTab === "apps"     && <AppsTab token={token} />}
+        {activeTab === "stores"   && <StoresTab token={token} />}
+        {activeTab === "brindes"  && <BonusProductsTab token={token} />}
+        {activeTab === "cities"   && <CitiesTab token={token} />}
+        {activeTab === "config"   && <ConfigTab token={token} />}
+        {activeTab === "usuarios" && <UsersTab token={token} />}
+        {activeTab === "database" && <DatabaseTab token={token} />}
       </main>
     </div>
   );
