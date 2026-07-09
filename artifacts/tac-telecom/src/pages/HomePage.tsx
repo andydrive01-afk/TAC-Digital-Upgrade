@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Check, Zap, Headphones, Radio, Wifi, MessageCircle, Phone, Star,
   ChevronLeft, ChevronRight, MapPin, ExternalLink,
+  Play, User, Menu, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -292,6 +293,7 @@ export default function HomePage() {
   const [bonusMap, setBonusMap] = useState<Map<number, BonusProduct>>(new Map());
   const [apps, setApps] = useState<App[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [coverageSubmitted, setCoverageSubmitted] = useState(false);
 
   useEffect(() => {
@@ -396,18 +398,71 @@ export default function HomePage() {
 
       {/* Nav */}
       <header className="sticky top-0 w-full z-40 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <SiteLogo logoUrl={logoUrl} />
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+
+          {/* Desktop nav — internal page links */}
+          <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">
             <a href="#planos" className="text-muted-foreground hover:text-primary transition-colors">Planos</a>
             <a href="#cobertura" className="text-muted-foreground hover:text-primary transition-colors">Cobertura</a>
             <a href="#contato" className="text-muted-foreground hover:text-primary transition-colors">Contato</a>
           </nav>
-          <div className="hidden sm:flex items-center gap-2 text-sm font-semibold text-primary">
-            <Phone className="w-4 h-4" />
-            <span>(48) 3660-0800</span>
+
+          {/* Desktop action links */}
+          <div className="hidden md:flex items-center gap-1">
+            <a
+              href="https://www.portaldoassinante.com/tactelecom"
+              target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Play className="w-4 h-4 fill-current" />
+              TAC Play
+            </a>
+            <a
+              href="/contratar"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Wifi className="w-4 h-4" />
+              Assine
+            </a>
+            <a
+              href="http://sac.tactelecom.com.br:8080/sac/login/?sys=SAC"
+              target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            >
+              <User className="w-4 h-4" />
+              Central do Cliente
+            </a>
           </div>
+
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            onClick={() => setMobileMenuOpen(v => !v)}
+            aria-label="Menu"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
+
+        {/* Mobile dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-md px-4 py-3 flex flex-col gap-1">
+            <a href="#planos" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">Planos</a>
+            <a href="#cobertura" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">Cobertura</a>
+            <a href="#contato" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">Contato</a>
+            <div className="my-1 border-t border-border/50" />
+            <a href="https://www.portaldoassinante.com/tactelecom" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+              <Play className="w-4 h-4 fill-current" /> TAC Play
+            </a>
+            <a href="/contratar" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold text-primary hover:bg-primary/10 transition-colors">
+              <Wifi className="w-4 h-4" /> Assine
+            </a>
+            <a href="http://sac.tactelecom.com.br:8080/sac/login/?sys=SAC" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+              <User className="w-4 h-4" /> Central do Cliente
+            </a>
+          </div>
+        )}
       </header>
 
       <main className="flex-1">
