@@ -23,15 +23,15 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
     const statements = [
       `CREATE TABLE IF NOT EXISTS heroes (
         id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        badge VARCHAR(1000) NOT NULL DEFAULT '',
-        title VARCHAR(1000) NOT NULL DEFAULT '',
-        title_highlight VARCHAR(1000) NOT NULL DEFAULT '',
-        subtitle VARCHAR(1000) NOT NULL DEFAULT '',
-        image_url VARCHAR(1000) NOT NULL DEFAULT '',
-        cta_primary VARCHAR(500) NOT NULL DEFAULT 'Ver Planos',
-        cta_primary_href VARCHAR(500) NOT NULL DEFAULT '/#planos',
-        cta_secondary VARCHAR(500) NOT NULL DEFAULT 'Consultar Cobertura',
-        cta_secondary_href VARCHAR(500) NOT NULL DEFAULT '/#cobertura',
+        badge TEXT NOT NULL DEFAULT '',
+        title TEXT NOT NULL,
+        title_highlight TEXT NOT NULL DEFAULT '',
+        subtitle TEXT NOT NULL DEFAULT '',
+        image_url TEXT NOT NULL DEFAULT '',
+        cta_primary TEXT NOT NULL DEFAULT 'Ver Planos',
+        cta_primary_href TEXT NOT NULL DEFAULT '/#planos',
+        cta_secondary TEXT NOT NULL DEFAULT 'Consultar Cobertura',
+        cta_secondary_href TEXT NOT NULL DEFAULT '/#cobertura',
         \`order\` INT NOT NULL DEFAULT 0,
         active TINYINT(1) NOT NULL DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -39,9 +39,9 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
 
       `CREATE TABLE IF NOT EXISTS bonus_products (
         id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(1000) NOT NULL DEFAULT '',
-        image_url VARCHAR(1000) NOT NULL DEFAULT '',
-        alt VARCHAR(1000) NOT NULL DEFAULT '',
+        name TEXT NOT NULL,
+        image_url TEXT NOT NULL DEFAULT '',
+        alt TEXT NOT NULL DEFAULT '',
         \`order\` INT NOT NULL DEFAULT 0,
         active TINYINT(1) NOT NULL DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -49,12 +49,12 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
 
       `CREATE TABLE IF NOT EXISTS plans (
         id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        tab VARCHAR(100) NOT NULL DEFAULT 'fibra',
-        name VARCHAR(500) NOT NULL DEFAULT '',
-        speed VARCHAR(500) NOT NULL DEFAULT '',
-        price VARCHAR(500) NOT NULL DEFAULT '',
-        price_cents VARCHAR(100) NOT NULL DEFAULT '90',
-        badge VARCHAR(500) NOT NULL DEFAULT '',
+        tab TEXT NOT NULL DEFAULT 'fibra',
+        name TEXT NOT NULL,
+        speed TEXT NOT NULL DEFAULT '',
+        price TEXT NOT NULL,
+        price_cents TEXT NOT NULL DEFAULT '90',
+        badge TEXT NOT NULL DEFAULT '',
         is_featured TINYINT(1) NOT NULL DEFAULT 0,
         icons JSON NOT NULL,
         features JSON NOT NULL,
@@ -69,7 +69,7 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
       `CREATE TABLE IF NOT EXISTS coverage_cities (
         id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
-        state VARCHAR(100) NOT NULL DEFAULT 'SC',
+        state TEXT NOT NULL DEFAULT 'SC',
         active TINYINT(1) NOT NULL DEFAULT 1,
         \`order\` INT NOT NULL DEFAULT 0,
         UNIQUE KEY uq_city_name (name)
@@ -83,10 +83,10 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
 
       `CREATE TABLE IF NOT EXISTS apps (
         id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(500) NOT NULL DEFAULT '',
-        description VARCHAR(1000) NOT NULL DEFAULT '',
-        icon_url VARCHAR(1000) NOT NULL DEFAULT '',
-        url VARCHAR(1000) NOT NULL DEFAULT '',
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        icon_url TEXT NOT NULL DEFAULT '',
+        url TEXT NOT NULL DEFAULT '',
         \`order\` INT NOT NULL DEFAULT 0,
         active TINYINT(1) NOT NULL DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -94,12 +94,12 @@ router.post("/admin/setup-db", adminAuth, async (req, res) => {
 
       `CREATE TABLE IF NOT EXISTS stores (
         id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(500) NOT NULL DEFAULT '',
-        address VARCHAR(1000) NOT NULL DEFAULT '',
-        city VARCHAR(500) NOT NULL DEFAULT '',
-        lat VARCHAR(50) NOT NULL DEFAULT '',
-        lng VARCHAR(50) NOT NULL DEFAULT '',
-        maps_url VARCHAR(1000) NOT NULL DEFAULT '',
+        name TEXT NOT NULL,
+        address TEXT NOT NULL DEFAULT '',
+        city TEXT NOT NULL DEFAULT '',
+        lat TEXT NOT NULL DEFAULT '',
+        lng TEXT NOT NULL DEFAULT '',
+        maps_url TEXT NOT NULL DEFAULT '',
         \`order\` INT NOT NULL DEFAULT 0,
         active TINYINT(1) NOT NULL DEFAULT 1,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
