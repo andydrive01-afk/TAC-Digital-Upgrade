@@ -138,31 +138,96 @@ function PlanCard({ plan, bonusMap }: { plan: Plan; bonusMap: Map<number, BonusP
   );
 }
 
-// ── Store Accordion Item ──────────────────────────────────────────────────────
-function StoreAccordionItem({ store }: { store: Store }) {
-  const [open, setOpen] = useState(false);
+// ── Store Map Section ─────────────────────────────────────────────────────────
+function StoreMapSection({ stores }: { stores: Store[] }) {
+  const [selectedId, setSelectedId] = useState<number>(stores[0]?.id ?? -1);
+  const selected = stores.find(s => s.id === selectedId) ?? stores[0];
+
+  const embedUrl = selected?.lat && selected?.lng
+    ? `https://maps.google.com/maps?q=${encodeURIComponent(selected.lat)},${encodeURIComponent(selected.lng)}&z=16&output=embed`
+    : null;
+
   return (
-    <div className={`rounded-2xl border overflow-hidden transition-colors ${open ? "border-primary/50 bg-primary/5" : "border-border/50 bg-card hover:border-border"}`}>
-      <button onClick={() => setOpen(v => !v)} className="w-full flex items-center justify-between px-4 py-3.5 text-left">
-        <div className="flex items-center gap-2.5">
-          <MapPin className="w-4 h-4 text-primary shrink-0" />
-          <span className="font-semibold text-sm">{store.name}</span>
+    <div className="border-b border-border/50">
+      <div className="container mx-auto px-4 py-16">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-3xl overflow-hidden border border-border/60 shadow-xl">
+
+            {/* ── Left: store list ── */}
+            <div className="bg-card flex flex-col">
+              <div className="px-8 pt-8 pb-5">
+                <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-2">Onde nos Encontrar?</h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Sempre tem uma loja perto de você!{" "}
+                  <span className="text-primary font-medium">Clique e veja o mais próximo de você.</span>
+                </p>
+              </div>
+
+              <div className="flex-1 overflow-y-auto divide-y divide-border/50 max-h-[420px] lg:max-h-none">
+                {stores.map(store => {
+                  const isSelected = store.id === selectedId;
+                  return (
+                    <button
+                      key={store.id}
+                      onClick={() => setSelectedId(store.id)}
+                      className={`w-full flex items-start justify-between gap-3 px-8 py-4 text-left transition-colors group ${
+                        isSelected ? "bg-primary/8 border-l-4 border-l-primary" : "hover:bg-muted/50 border-l-4 border-l-transparent"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3 min-w-0">
+                        <MapPin className={`w-4 h-4 mt-0.5 shrink-0 transition-colors ${isSelected ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`} />
+                        <div className="min-w-0">
+                          <p className={`font-semibold text-sm truncate transition-colors ${isSelected ? "text-primary" : "text-foreground"}`}>
+                            {store.name}
+                          </p>
+                          {isSelected && (
+                            <div className="mt-1 space-y-0.5">
+                              {store.address && <p className="text-xs text-muted-foreground leading-relaxed">{store.address}</p>}
+                              {store.city && <p className="text-xs text-muted-foreground/60">{store.city}</p>}
+                              {store.mapsUrl && (
+                                <a
+                                  href={store.mapsUrl}
+                                  target="_blank" rel="noopener noreferrer"
+                                  onClick={e => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 text-primary text-xs font-semibold hover:underline mt-1.5"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                  Como chegar
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight className={`w-4 h-4 shrink-0 mt-0.5 transition-transform ${isSelected ? "text-primary rotate-90" : "text-muted-foreground/40"}`} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── Right: map ── */}
+            <div className="relative bg-muted min-h-[320px] lg:min-h-0">
+              {embedUrl ? (
+                <iframe
+                  key={embedUrl}
+                  title={`Mapa — ${selected?.name}`}
+                  src={embedUrl}
+                  className="absolute inset-0 w-full h-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm">
+                  Mapa indisponível
+                </div>
+              )}
+            </div>
+
+          </div>
         </div>
-        <ChevronRight className={`w-4 h-4 text-muted-foreground transition-transform duration-200 shrink-0 ${open ? "rotate-90" : ""}`} />
-      </button>
-      {open && (
-        <div className="px-4 pb-4 border-t border-border/30">
-          <p className="text-sm text-muted-foreground mt-3 mb-0.5 leading-relaxed">{store.address}</p>
-          <p className="text-xs text-muted-foreground/60 mb-3">{store.city}</p>
-          {store.mapsUrl && (
-            <a href={store.mapsUrl} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-primary text-xs font-semibold hover:underline">
-              <ExternalLink className="w-3.5 h-3.5" />
-              Como chegar
-            </a>
-          )}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -779,21 +844,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer id="contato" className="bg-card border-t border-border">
         {/* Nossas Lojas */}
-        {stores.length > 0 && (
-          <div className="border-b border-border/50 bg-background/40">
-            <div className="container mx-auto px-4 py-16">
-              <div className="max-w-5xl mx-auto">
-                <div className="text-center mb-10">
-                  <h2 className="text-3xl md:text-4xl font-black tracking-tight mb-2">Nossas Lojas</h2>
-                  <p className="text-muted-foreground text-sm">Atendimento presencial em toda a região — clique na loja para ver o endereço</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {stores.map(store => <StoreAccordionItem key={store.id} store={store} />)}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {stores.length > 0 && <StoreMapSection stores={stores} />}
 
         {/* Main footer body */}
         <div className="container mx-auto px-4 py-16">
