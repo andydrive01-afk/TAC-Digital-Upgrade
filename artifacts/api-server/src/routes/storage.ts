@@ -1,6 +1,7 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import multer from "multer";
 import { LocalObjectStorageService, ObjectNotFoundError } from "../lib/localObjectStorage";
+import { adminAuth } from "../middlewares/adminAuth";
 
 const router: IRouter = Router();
 const objectStorageService = new LocalObjectStorageService();
@@ -13,7 +14,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
  * artifacts/api-server/uploads and served back via GET /storage/objects/*.
  * Client sends multipart/form-data with a "file" field.
  */
-router.post("/storage/uploads", upload.single("file"), async (req: Request, res: Response) => {
+router.post("/storage/uploads", adminAuth, upload.single("file"), async (req: Request, res: Response) => {
   if (!req.file) {
     res.status(400).json({ error: "No file provided" });
     return;

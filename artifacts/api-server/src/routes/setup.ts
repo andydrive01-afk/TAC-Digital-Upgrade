@@ -131,7 +131,7 @@ router.get("/setup/status", async (_req, res) => {
     res.json({
       needsSetup: true,
       dbConnected: false,
-      error: String(err instanceof Error ? err.message : err),
+      error: "Não foi possível conectar ao banco de dados.",
     });
   }
 });
@@ -176,7 +176,7 @@ router.post("/setup/init", async (req, res) => {
     res.json({ ok: true, token: jwtSign(username.trim()) });
   } catch (err) {
     (req as any).log?.error?.({ err }, "setup/init error");
-    res.status(500).json({ error: String(err instanceof Error ? err.message : err) });
+    res.status(500).json({ error: "Erro ao inicializar o sistema. Verifique os logs do servidor." });
   }
 });
 
