@@ -89,7 +89,7 @@ function SiteLogo({ logoUrl, textSize = "text-2xl" }: { logoUrl?: string; textSi
   }
   return (
     <TacLogoSvg
-      className={`w-auto shrink-0 ${textSize === "text-4xl" ? "h-20" : "h-10"}`}
+      className={`w-auto shrink-0 ${textSize === "text-4xl" ? "h-28" : "h-10"}`}
       style={{ color: "currentColor" }}
     />
   );
@@ -928,11 +928,11 @@ export default function HomePage() {
         {stores.length > 0 && <StoreMapSection stores={stores} />}
 
         {/* Main footer body */}
-        <div className="container mx-auto px-4 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto items-start">
+        <div className="container mx-auto px-4 py-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto items-start">
 
             {/* Col 1 — Logo + Social + CTA */}
-            <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-5">
               <div>
                 <SiteLogo logoUrl={logoUrl} textSize="text-4xl" />
                 <p className="text-muted-foreground mt-4 text-sm leading-relaxed max-w-sm">
@@ -975,7 +975,7 @@ export default function HomePage() {
             </div>
 
             {/* Col 2 — Contact + Quick links */}
-            <div className="flex flex-col gap-8 md:border-l md:border-border/30 md:pl-12">
+            <div className="flex flex-col gap-5 md:border-l md:border-border/30 md:pl-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Contato</p>
                 <a href="mailto:atendimento@tactelecom.com.br"
