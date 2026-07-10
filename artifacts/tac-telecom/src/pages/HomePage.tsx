@@ -212,15 +212,15 @@ function StoreMapSection({ stores }: { stores: Store[] }) {
                         className="w-full flex items-start justify-between gap-3 px-5 py-3.5 text-left"
                       >
                         <div className="flex items-start gap-3 min-w-0">
-                          <MapPin className="w-4 h-4 mt-0.5 shrink-0" style={{ color: isSelected ? "#ef4444" : "#22c55e" }} />
+                          <MapPin className="w-4 h-4 mt-0.5 shrink-0" style={{ color: isSelected ? "#fff" : "#22c55e" }} />
                           <div className="min-w-0">
-                            <p className="font-semibold text-sm truncate" style={{ color: isSelected ? "#ef4444" : "#fff" }}>
+                            <p className="font-semibold text-sm truncate" style={{ color: isSelected ? "#fff" : "#fff" }}>
                               {store.name}
                             </p>
                             {isSelected && (
                               <div className="mt-1 space-y-0.5">
                                 {store.address && <p className="text-xs leading-relaxed" style={{ color: "#fff" }}>{store.address}</p>}
-                                {store.city && <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{store.city}</p>}
+                                {store.city && <p className="text-xs" style={{ color: "#fff" }}>{store.city}</p>}
                               </div>
                             )}
                           </div>
@@ -239,7 +239,7 @@ function StoreMapSection({ stores }: { stores: Store[] }) {
                             className="inline-flex items-center gap-1 text-xs font-bold hover:underline"
                             style={{ color: "#fff" }}
                           >
-                            <ExternalLink className="w-3 h-3" style={{ color: "#ef4444" }} />
+                            <ExternalLink className="w-3 h-3" />
                             Como chegar
                           </a>
                         </div>
