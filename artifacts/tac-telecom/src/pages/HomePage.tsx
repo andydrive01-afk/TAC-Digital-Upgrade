@@ -89,7 +89,7 @@ function SiteLogo({ logoUrl, textSize = "text-2xl" }: { logoUrl?: string; textSi
   }
   return (
     <TacLogoSvg
-      className={`w-auto shrink-0 ${textSize === "text-4xl" ? "h-28" : "h-10"}`}
+      className={`w-auto shrink-0 ${textSize === "text-4xl" ? "h-48" : "h-10"}`}
       style={{ color: "currentColor" }}
     />
   );
@@ -212,15 +212,15 @@ function StoreMapSection({ stores }: { stores: Store[] }) {
                         className="w-full flex items-start justify-between gap-3 px-5 py-3.5 text-left"
                       >
                         <div className="flex items-start gap-3 min-w-0">
-                          <MapPin className="w-4 h-4 mt-0.5 shrink-0" style={{ color: isSelected ? "#000" : "#22c55e" }} />
+                          <MapPin className="w-4 h-4 mt-0.5 shrink-0" style={{ color: isSelected ? "#ef4444" : "#22c55e" }} />
                           <div className="min-w-0">
-                            <p className="font-semibold text-sm truncate" style={{ color: isSelected ? "#000" : "#fff" }}>
+                            <p className="font-semibold text-sm truncate" style={{ color: isSelected ? "#ef4444" : "#fff" }}>
                               {store.name}
                             </p>
                             {isSelected && (
                               <div className="mt-1 space-y-0.5">
-                                {store.address && <p className="text-xs leading-relaxed" style={{ color: "#1a1a1a" }}>{store.address}</p>}
-                                {store.city && <p className="text-xs" style={{ color: "#333" }}>{store.city}</p>}
+                                {store.address && <p className="text-xs leading-relaxed" style={{ color: "#fff" }}>{store.address}</p>}
+                                {store.city && <p className="text-xs" style={{ color: "rgba(255,255,255,0.7)" }}>{store.city}</p>}
                               </div>
                             )}
                           </div>
@@ -237,9 +237,9 @@ function StoreMapSection({ stores }: { stores: Store[] }) {
                             href={store.mapsUrl}
                             target="_blank" rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs font-bold hover:underline"
-                            style={{ color: "#000" }}
+                            style={{ color: "#fff" }}
                           >
-                            <ExternalLink className="w-3 h-3" />
+                            <ExternalLink className="w-3 h-3" style={{ color: "#ef4444" }} />
                             Como chegar
                           </a>
                         </div>
