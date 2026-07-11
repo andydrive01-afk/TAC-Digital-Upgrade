@@ -20,18 +20,6 @@ author = "agent"
 task = "workflow.run"
 args = "MySQL"
 
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "API Server"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "TAC Telecom"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Mockup Sandbox"
-
 [[workflows.workflow]]
 name = "MySQL"
 author = "agent"
@@ -42,43 +30,6 @@ args = "/nix/store/s2lbn1axpc79kwnc829k5idkwabfq459-mysql-8.0.42/bin/mysqld --da
 
 [workflows.workflow.metadata]
 outputType = "console"
-
-[[workflows.workflow]]
-name = "API Server"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "PORT=8080 pnpm --filter @workspace/api-server run dev"
-waitForPort = 8080
-
-[[workflows.workflow]]
-name = "TAC Telecom"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "webview"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "PORT=19369 BASE_PATH=/ pnpm --filter @workspace/tac-telecom run dev"
-waitForPort = 19369
-
-[[workflows.workflow]]
-name = "Mockup Sandbox"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "PORT=8081 BASE_PATH=/__mockup pnpm --filter @workspace/mockup-sandbox run dev"
-waitForPort = 8081
-
-[workflows.workflow.metadata]
-outputType = "console"
-isCanvasWorkflow = true
 
 [agent]
 stack = "PNPM_WORKSPACE"
