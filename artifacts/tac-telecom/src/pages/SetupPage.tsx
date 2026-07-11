@@ -7,7 +7,7 @@ import { CheckCircle2, AlertCircle, Loader2, Eye, EyeOff, Wifi, Database, Shield
 
 const API = "/api";
 
-type Step = "connecting" | "connected" | "db-error" | "form" | "submitting" | "done";
+type Step = "connecting" | "connected" | "db-error" | "db-config" | "db-configuring" | "form" | "submitting" | "done";
 
 interface SetupPageProps {
   onComplete: (token: string) => void;
@@ -21,32 +21,61 @@ export default function SetupPage({ onComplete }: SetupPageProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [formError, setFormError] = useState("");
+  const [mysqlUrl, setMysqlUrl] = useState("");
+  const [dbConfigError, setDbConfigError] = useState("");
   const checkDone = useRef(false);
 
   useEffect(() => {
     if (checkDone.current) return;
     checkDone.current = true;
+    checkConnection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  const checkConnection = (url?: string) => {
+    setStep("connecting");
+    setDbError("");
     fetch(`${API}/setup/status`)
-      .then((r) => r.json() as Promise<{ needsSetup: boolean; dbConnected: boolean; error?: string }>)
+      .then((r) => r.json() as Promise<{ dbConnected: boolean; needsSetup: boolean; error?: string }>)
       .then((data) => {
         if (!data.dbConnected) {
           setDbError(data.error ?? "Não foi possível conectar ao banco de dados.");
+          setMysqlUrl(url ?? "");
           setStep("db-error");
         } else if (!data.needsSetup) {
-          // Already set up — parent will handle
           onComplete("");
         } else {
           setStep("connected");
-          // Short pause so the user sees the success state, then show form
           setTimeout(() => setStep("form"), 800);
         }
       })
-      .catch((err) => {
-        setDbError(String(err));
-        setStep("db-error");
+      .catch((err) => { setDbError(String(err)); setStep("db-error"); });
+  };
+
+  const handleDbConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDbConfigError("");
+    if (!mysqlUrl.trim()) { setDbConfigError("Informe a URL do MySQL."); return; }
+    setStep("db-configuring");
+    try {
+      const res = await fetch(`${API}/setup/configure-db`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mysqlUrl: mysqlUrl.trim() }),
       });
-  }, [onComplete]);
+      const data = await res.json() as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        setDbConfigError(data.error ?? "Erro ao configurar o banco.");
+        setStep("db-config");
+        return;
+      }
+      // Connection configured — now proceed normally
+      checkConnection(mysqlUrl.trim());
+    } catch (err) {
+      setDbConfigError(String(err));
+      setStep("db-config");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +123,7 @@ export default function SetupPage({ onComplete }: SetupPageProps) {
             { label: "Conectar", icon: <Wifi className="w-3.5 h-3.5" /> },
             { label: "Configurar", icon: <Database className="w-3.5 h-3.5" /> },
           ].map((s, i) => {
-            const active = (i === 0 && ["connecting", "connected", "db-error"].includes(step))
+            const active = (i === 0 && ["connecting", "connected", "db-error", "db-config", "db-configuring"].includes(step))
               || (i === 1 && ["form", "submitting", "done"].includes(step));
             const done = (i === 0 && ["form", "submitting", "done"].includes(step));
             return (
@@ -144,32 +173,67 @@ export default function SetupPage({ onComplete }: SetupPageProps) {
                       {dbError && <p className="text-xs mt-1 opacity-80 font-mono break-all">{dbError}</p>}
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Verifique se a variável <code className="bg-muted px-1 rounded">MYSQL_URL</code> está
-                    configurada corretamente e se o servidor MySQL está em execução.
-                  </p>
-                  <Button size="sm" variant="outline" onClick={() => {
-                    setStep("connecting");
-                    checkDone.current = false;
-                    setDbError("");
-                    // Re-run check
-                    fetch(`${API}/setup/status`)
-                      .then((r) => r.json() as Promise<{ dbConnected: boolean; error?: string }>)
-                      .then((data) => {
-                        if (!data.dbConnected) {
-                          setDbError(data.error ?? "Falha na conexão.");
-                          setStep("db-error");
-                        } else {
-                          setStep("connected");
-                          setTimeout(() => setStep("form"), 800);
-                        }
-                      })
-                      .catch((err) => { setDbError(String(err)); setStep("db-error"); });
-                  }}>
-                    Tentar novamente
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => checkConnection()}>
+                      Tentar novamente
+                    </Button>
+                    <Button size="sm" onClick={() => { setDbConfigError(""); setStep("db-config"); }}>
+                      Configurar conexão
+                    </Button>
+                  </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 1b: Configure MySQL URL */}
+        {(step === "db-config" || step === "db-configuring") && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Database className="w-4 h-4 text-primary" />
+                Configurar conexão MySQL
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Informe a URL de conexão com o banco de dados MySQL.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={(e) => void handleDbConfig(e)} className="space-y-4">
+                <div className="space-y-1">
+                  <Label htmlFor="mysql-url">URL do MySQL</Label>
+                  <Input
+                    id="mysql-url"
+                    value={mysqlUrl}
+                    onChange={(e) => setMysqlUrl(e.target.value)}
+                    placeholder="mysql://usuario:senha@localhost:3306/nome_do_banco"
+                    disabled={step === "db-configuring"}
+                    autoFocus
+                    autoComplete="off"
+                    className="font-mono text-xs"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Exemplo: <code className="bg-muted px-1 rounded">mysql://tacapp:senha@localhost:3306/tac_telecom</code>
+                  </p>
+                </div>
+                {dbConfigError && (
+                  <p className="text-sm text-destructive flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 shrink-0" /> {dbConfigError}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => setStep("db-error")}
+                    disabled={step === "db-configuring"}>
+                    Voltar
+                  </Button>
+                  <Button type="submit" disabled={step === "db-configuring"}>
+                    {step === "db-configuring"
+                      ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Testando conexão...</>
+                      : "Salvar e conectar"}
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
         )}

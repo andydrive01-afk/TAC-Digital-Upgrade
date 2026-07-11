@@ -1,7 +1,10 @@
 import { Router, type IRouter } from "express";
-import { pool } from "@workspace/db";
+import { pool, reinitPool } from "@workspace/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { writeFile, readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import mysql from "mysql2/promise";
 import { seedDefaultData } from "../lib/seed.js";
 import { invalidateUserCache } from "../middlewares/adminAuth.js";
 
@@ -108,6 +111,49 @@ const ALL_CREATE_STMTS = [
     UNIQUE KEY uq_username (username)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ];
+
+// ── POST /api/setup/configure-db ─────────────────────────────────────────────
+// Accepts a MySQL URL, tests it, updates the in-memory pool, and persists the
+// URL to a .env file so it survives server restarts.
+router.post("/setup/configure-db", async (req, res) => {
+  const { mysqlUrl } = req.body as { mysqlUrl?: string };
+  if (!mysqlUrl?.trim()) {
+    res.status(400).json({ error: "mysqlUrl é obrigatório." });
+    return;
+  }
+
+  // Test the URL with a one-off connection before committing
+  let testConn: mysql.Connection | null = null;
+  try {
+    testConn = await mysql.createConnection(mysqlUrl.trim());
+    await testConn.execute("SELECT 1");
+    await testConn.end();
+  } catch (err) {
+    try { await testConn?.end(); } catch { /* ignore */ }
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(400).json({ error: `Não foi possível conectar: ${msg}` });
+    return;
+  }
+
+  // Persist to .env file alongside the running process so restarts keep it
+  try {
+    const envPath = resolve(process.cwd(), ".env");
+    let existing = "";
+    try { existing = await readFile(envPath, "utf8"); } catch { /* no file yet */ }
+    // Replace or append MYSQL_URL line
+    const updated = existing.includes("MYSQL_URL=")
+      ? existing.replace(/^MYSQL_URL=.*$/m, `MYSQL_URL=${mysqlUrl.trim()}`)
+      : `${existing.trimEnd()}\nMYSQL_URL=${mysqlUrl.trim()}\n`;
+    await writeFile(envPath, updated, "utf8");
+  } catch {
+    // Non-fatal — the in-memory reinit will still work for this session
+  }
+
+  // Hot-swap the shared pool so subsequent requests use the new URL
+  reinitPool(mysqlUrl.trim());
+
+  res.json({ ok: true });
+});
 
 // ── GET /api/setup/status ────────────────────────────────────────────────────
 router.get("/setup/status", async (_req, res) => {
