@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { TacLogoSvg } from "@/components/TacLogoSvg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -392,7 +393,8 @@ function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl font-black">
-            TAC<span className="text-primary">Telecom</span> Admin
+            <TacLogoSvg className="h-12 w-auto mb-1" />
+            <span className="sr-only">TAC Telecom</span> Admin
           </CardTitle>
           <p className="text-sm text-muted-foreground">Painel de gerenciamento do site</p>
         </CardHeader>

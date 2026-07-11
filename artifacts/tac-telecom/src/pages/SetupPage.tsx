@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { TacLogoSvg } from "@/components/TacLogoSvg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -110,10 +111,8 @@ export default function SetupPage({ onComplete }: SetupPageProps) {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
-        <div className="text-center space-y-1">
-          <h1 className="text-3xl font-black">
-            TAC<span className="text-primary">Telecom</span>
-          </h1>
+        <div className="text-center space-y-2">
+          <TacLogoSvg className="h-16 w-auto mx-auto" />
           <p className="text-muted-foreground text-sm">Configuração inicial do sistema</p>
         </div>
 
