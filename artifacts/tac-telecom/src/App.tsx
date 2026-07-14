@@ -20,10 +20,23 @@ function AppContent() {
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    fetch(`/api/setup/status`)
-      .then((r) => r.json() as Promise<{ needsSetup: boolean }>)
-      .then((d) => setSetupStatus(d.needsSetup ? "needs-setup" : "ready"))
-      .catch(() => setSetupStatus("needs-setup"));
+    const check = (attempt: number) => {
+      fetch(`/api/setup/status`)
+        .then((r) => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json() as Promise<{ needsSetup: boolean }>;
+        })
+        .then((d) => setSetupStatus(d.needsSetup ? "needs-setup" : "ready"))
+        .catch(() => {
+          // Retry once after 1s before falling back to needs-setup
+          if (attempt < 2) {
+            setTimeout(() => check(attempt + 1), 1000);
+          } else {
+            setSetupStatus("needs-setup");
+          }
+        });
+    };
+    check(0);
   }, []);
 
   const handleSetupComplete = (token: string) => {

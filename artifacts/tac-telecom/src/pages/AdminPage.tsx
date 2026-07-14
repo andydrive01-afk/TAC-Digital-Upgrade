@@ -715,13 +715,27 @@ function PlansTab({ token }: { token: string }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [plansRes, bonusRes] = await Promise.all([
-      fetch(`${API}/admin/plans`, { headers: authHeader(token) }),
-      fetch(`${API}/admin/bonus-products`, { headers: authHeader(token) }),
-    ]);
-    if (plansRes.ok) setPlans(await plansRes.json() as Plan[]);
-    if (bonusRes.ok) setBonusProducts(await bonusRes.json() as BonusProduct[]);
-    setLoading(false);
+    try {
+      const [plansRes, bonusRes] = await Promise.all([
+        fetch(`${API}/admin/plans`, { headers: authHeader(token) }),
+        fetch(`${API}/admin/bonus-products`, { headers: authHeader(token) }),
+      ]);
+      if (plansRes.ok) {
+        const data = await plansRes.json() as Plan[];
+        // Ensure JSON array fields are always proper arrays (mysql2 may return strings)
+        setPlans(data.map(p => ({
+          ...p,
+          features: Array.isArray(p.features) ? p.features : (typeof p.features === "string" ? JSON.parse(p.features as unknown as string) : []),
+          icons:    Array.isArray(p.icons)    ? p.icons    : (typeof p.icons    === "string" ? JSON.parse(p.icons    as unknown as string) : []),
+          bonusIds: Array.isArray(p.bonusIds) ? p.bonusIds : (typeof p.bonusIds === "string" ? JSON.parse(p.bonusIds as unknown as string) : []),
+        })));
+      }
+      if (bonusRes.ok) setBonusProducts(await bonusRes.json() as BonusProduct[]);
+    } catch (err) {
+      console.error("Erro ao carregar planos:", err);
+    } finally {
+      setLoading(false);
+    }
   }, [token]);
 
   useEffect(() => { void load(); }, [load]);
