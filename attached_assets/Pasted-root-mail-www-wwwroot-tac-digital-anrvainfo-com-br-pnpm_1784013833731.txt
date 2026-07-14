@@ -1,0 +1,52 @@
+root@mail:/www/wwwroot/tac-digital.anrvainfo.com.br# pnpm install --frozen-lockfile
+pnpm --filter @workspace/api-server run build
+pnpm --filter @workspace/tac-telecom run build
+pm2 restart tac-api
+pm2 save
+[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.overrides". See https://pnpm.io/settings for the new home of each setting.
+Scope: all 9 workspace projects
+Already up to date
+Done in 430ms using pnpm v11.11.0
+[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.overrides". See https://pnpm.io/settings for the new home of each setting.
+$ node ./build.mjs
+
+  dist/index.mjs                       2.6mb ⚠️
+  dist/pino-worker.mjs               153.4kb
+  dist/pino-file.mjs                 142.1kb
+  dist/pino-pretty.mjs               114.6kb
+  dist/thread-stream-worker.mjs        7.3kb
+  dist/index.mjs.map                   4.5mb
+  dist/pino-worker.mjs.map           256.9kb
+  dist/pino-file.mjs.map             229.1kb
+  dist/pino-pretty.mjs.map           204.0kb
+  dist/thread-stream-worker.mjs.map   12.0kb
+
+⚡ Done in 565ms
+[WARN] The "pnpm" field in package.json is no longer read by pnpm. The following keys were ignored: "pnpm.overrides". See https://pnpm.io/settings for the new home of each setting.
+$ vite build --config vite.config.ts
+failed to load config from /www/wwwroot/tac-digital.anrvainfo.com.br/artifacts/tac-telecom/vite.config.ts
+error during build:
+Error: PORT environment variable is required but was not provided.
+    at file:///www/wwwroot/tac-digital.anrvainfo.com.br/artifacts/tac-telecom/node_modules/.vite-temp/vite.config.ts.timestamp-1784013810782-0d6672db6458b.mjs:10:9
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async loadConfigFromBundledFile (file:///www/wwwroot/tac-digital.anrvainfo.com.br/node_modules/.pnpm/vite@7.3.3_@types+node@25.6.2_jiti@2.7.0_lightningcss@1.32.0_tsx@4.21.0_yaml@2.8.4/node_modules/vite/dist/node/chunks/config.js:35936:12)
+    at async bundleAndLoadConfigFile (file:///www/wwwroot/tac-digital.anrvainfo.com.br/node_modules/.pnpm/vite@7.3.3_@types+node@25.6.2_jiti@2.7.0_lightningcss@1.32.0_tsx@4.21.0_yaml@2.8.4/node_modules/vite/dist/node/chunks/config.js:35824:17)
+    at async loadConfigFromFile (file:///www/wwwroot/tac-digital.anrvainfo.com.br/node_modules/.pnpm/vite@7.3.3_@types+node@25.6.2_jiti@2.7.0_lightningcss@1.32.0_tsx@4.21.0_yaml@2.8.4/node_modules/vite/dist/node/chunks/config.js:35791:42)
+    at async resolveConfig (file:///www/wwwroot/tac-digital.anrvainfo.com.br/node_modules/.pnpm/vite@7.3.3_@types+node@25.6.2_jiti@2.7.0_lightningcss@1.32.0_tsx@4.21.0_yaml@2.8.4/node_modules/vite/dist/node/chunks/config.js:35440:22)
+    at async createBuilder (file:///www/wwwroot/tac-digital.anrvainfo.com.br/node_modules/.pnpm/vite@7.3.3_@types+node@25.6.2_jiti@2.7.0_lightningcss@1.32.0_tsx@4.21.0_yaml@2.8.4/node_modules/vite/dist/node/chunks/config.js:33895:19)
+    at async CAC.<anonymous> (file:///www/wwwroot/tac-digital.anrvainfo.com.br/node_modules/.pnpm/vite@7.3.3_@types+node@25.6.2_jiti@2.7.0_lightningcss@1.32.0_tsx@4.21.0_yaml@2.8.4/node_modules/vite/dist/node/cli.js:629:10)
+/www/wwwroot/tac-digital.anrvainfo.com.br/artifacts/tac-telecom:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @workspace/tac-telecom@0.0.0 build: `vite build --config vite.config.ts`
+Exit status 1
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [tac-api](ids: [ 0 ])
+[PM2] [tac-api](0) ✓
+┌────┬─────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name        │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼─────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 1  │ pd-anrva    │ default     │ 0.7.0-… │ fork    │ 136158   │ 28m    │ 37   │ online    │ 0%       │ 96.4mb   │ root     │ disabled │
+│ 0  │ tac-api     │ default     │ 0.0.0   │ fork    │ 137447   │ 0s     │ 8    │ online    │ 0%       │ 20.4mb   │ root     │ disabled │
+└────┴─────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+[PM2] Saving current process list...
+[PM2] Successfully saved in /root/.pm2/dump.pm2
