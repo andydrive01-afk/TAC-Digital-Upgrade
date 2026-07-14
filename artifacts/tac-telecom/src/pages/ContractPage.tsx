@@ -49,7 +49,7 @@ const TIME_SLOTS = [
   { id: "tarde", label: "Tarde", range: "13h às 18h" },
 ];
 
-const STEP_LABELS = ["Seus Dados", "Endereço", "Agendamento", "Confirmar"];
+const STEP_LABELS = ["Planos", "Seus Dados", "Endereço", "Agendamento", "Confirmar"];
 
 type Step1Data = {
   nome: string; email: string; telefone: string; cpf: string;
@@ -501,126 +501,6 @@ export default function ContractPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
         <div className="w-full max-w-lg">
 
-          {/* ── Plan selector ──────────────────────────────── */}
-          <div className="mb-8 bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
-
-            {/* Internet (obrigatório) */}
-            <div className="p-4 border-b border-border/60">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Wifi className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-bold">Plano de Internet</span>
-                <span className="ml-auto text-xs text-primary font-semibold bg-primary/10 rounded-full px-2 py-0.5">Obrigatório</span>
-              </div>
-              <PlanCardRow
-                plans={internetPlans}
-                selectedKey={selectedInternetKey}
-                onSelect={setSelectedInternetKey}
-              />
-              {selectedInternetPlan && (
-                <p className="text-xs text-primary font-medium mt-2 flex items-center gap-1">
-                  <Check className="w-3 h-3" />
-                  {selectedInternetPlan.name} — {planPriceDisplay(selectedInternetPlan)}
-                </p>
-              )}
-            </div>
-
-            {/* TV (opcional) */}
-            <div className={`p-4 border-b border-border/60 transition-colors ${tvEnabled ? "bg-primary/[0.03]" : ""}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${tvEnabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                  <Tv className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-bold">TAC TV</span>
-                <span className="text-xs text-muted-foreground">(opcional)</span>
-                <button
-                  type="button"
-                  onClick={() => handleToggleTv(!tvEnabled)}
-                  className={`ml-auto flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
-                    tvEnabled
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
-                  }`}
-                >
-                  {tvEnabled ? <><Check className="w-3 h-3" /> Adicionado</> : <>+ Adicionar</>}
-                </button>
-              </div>
-
-              {tvEnabled && (
-                <div className="mt-3 space-y-3">
-                  <PlanCardRow
-                    plans={tvPlans}
-                    selectedKey={selectedTvKey}
-                    onSelect={setSelectedTvKey}
-                  />
-                  {selectedTvPlan && (
-                    <>
-                      <Counter
-                        value={tvPontos}
-                        min={1}
-                        max={10}
-                        onChange={setTvPontos}
-                        label="Pontos:"
-                      />
-                      <p className="text-xs text-primary font-medium flex items-center gap-1">
-                        <Check className="w-3 h-3" />
-                        {selectedTvPlan.name} · {tvPontos} ponto{tvPontos > 1 ? "s" : ""} — {calcPriceDisplay(selectedTvPlan, tvPontos)}
-                      </p>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Telefone (opcional) */}
-            <div className={`p-4 transition-colors ${telefoneEnabled ? "bg-primary/[0.03]" : ""}`}>
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${telefoneEnabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                  <Phone className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-bold">Telefone Fixo</span>
-                <span className="text-xs text-muted-foreground">(opcional)</span>
-                <button
-                  type="button"
-                  onClick={() => handleToggleTelefone(!telefoneEnabled)}
-                  className={`ml-auto flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
-                    telefoneEnabled
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
-                  }`}
-                >
-                  {telefoneEnabled ? <><Check className="w-3 h-3" /> Adicionado</> : <>+ Adicionar</>}
-                </button>
-              </div>
-
-              {telefoneEnabled && (
-                <div className="mt-3 space-y-3">
-                  <PlanCardRow
-                    plans={telefonePlans}
-                    selectedKey={selectedTelefoneKey}
-                    onSelect={setSelectedTelefoneKey}
-                  />
-                  {selectedTelefonePlan && (
-                    <>
-                      <Counter
-                        value={telefoneLinhas}
-                        min={1}
-                        max={2}
-                        onChange={setTelefoneLinhas}
-                        label="Linhas:"
-                      />
-                      <p className="text-xs text-primary font-medium flex items-center gap-1">
-                        <Check className="w-3 h-3" />
-                        {selectedTelefonePlan.name} · {telefoneLinhas} linha{telefoneLinhas > 1 ? "s" : ""} — {calcPriceDisplay(selectedTelefonePlan, telefoneLinhas)}
-                      </p>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Step indicator */}
           <div className="flex items-center justify-center gap-0 mb-10">
             {STEP_LABELS.map((label, i) => (
@@ -648,9 +528,99 @@ export default function ContractPage() {
           <div className="bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
             <AnimatePresence mode="wait" custom={dir}>
 
-              {/* ── STEP 0: Dados pessoais ── */}
+              {/* ── STEP 0: Seleção de Planos ── */}
               {step === 0 && (
                 <motion.div key="step0" custom={dir} variants={stepVariants} initial="enter" animate="center" exit="exit">
+                  <SectionHeader
+                    icon={<Wifi className="w-5 h-5" />}
+                    title="Escolha seu Plano"
+                    subtitle="Selecione o plano de internet e adicione TV ou telefone se quiser."
+                  />
+
+                  {/* Internet (obrigatório) */}
+                  <div className="px-6 md:px-8 pt-5 pb-4 border-b border-border/60">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <Wifi className="w-4 h-4" />
+                      </div>
+                      <span className="text-sm font-bold">Plano de Internet</span>
+                      <span className="ml-auto text-xs text-primary font-semibold bg-primary/10 rounded-full px-2 py-0.5">Obrigatório</span>
+                    </div>
+                    <PlanCardRow plans={internetPlans} selectedKey={selectedInternetKey} onSelect={setSelectedInternetKey} />
+                    {selectedInternetPlan && (
+                      <p className="text-xs text-primary font-medium mt-2 flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        {selectedInternetPlan.name} — {planPriceDisplay(selectedInternetPlan)}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* TV (opcional) */}
+                  <div className={`px-6 md:px-8 py-4 border-b border-border/60 transition-colors ${tvEnabled ? "bg-primary/[0.03]" : ""}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${tvEnabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                        <Tv className="w-4 h-4" />
+                      </div>
+                      <span className="text-sm font-bold">TAC TV</span>
+                      <span className="text-xs text-muted-foreground">(opcional)</span>
+                      <button type="button" onClick={() => handleToggleTv(!tvEnabled)}
+                        className={`ml-auto flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${tvEnabled ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"}`}>
+                        {tvEnabled ? <><Check className="w-3 h-3" /> Adicionado</> : <>+ Adicionar</>}
+                      </button>
+                    </div>
+                    {tvEnabled && (
+                      <div className="mt-3 space-y-3">
+                        <PlanCardRow plans={tvPlans} selectedKey={selectedTvKey} onSelect={setSelectedTvKey} />
+                        {selectedTvPlan && (
+                          <>
+                            <Counter value={tvPontos} min={1} max={10} onChange={setTvPontos} label="Pontos:" />
+                            <p className="text-xs text-primary font-medium flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              {selectedTvPlan.name} · {tvPontos} ponto{tvPontos > 1 ? "s" : ""} — {calcPriceDisplay(selectedTvPlan, tvPontos)}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Telefone (opcional) */}
+                  <div className={`px-6 md:px-8 py-4 transition-colors ${telefoneEnabled ? "bg-primary/[0.03]" : ""}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${telefoneEnabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <span className="text-sm font-bold">Telefone Fixo</span>
+                      <span className="text-xs text-muted-foreground">(opcional)</span>
+                      <button type="button" onClick={() => handleToggleTelefone(!telefoneEnabled)}
+                        className={`ml-auto flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${telefoneEnabled ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"}`}>
+                        {telefoneEnabled ? <><Check className="w-3 h-3" /> Adicionado</> : <>+ Adicionar</>}
+                      </button>
+                    </div>
+                    {telefoneEnabled && (
+                      <div className="mt-3 space-y-3">
+                        <PlanCardRow plans={telefonePlans} selectedKey={selectedTelefoneKey} onSelect={setSelectedTelefoneKey} />
+                        {selectedTelefonePlan && (
+                          <>
+                            <Counter value={telefoneLinhas} min={1} max={2} onChange={setTelefoneLinhas} label="Linhas:" />
+                            <p className="text-xs text-primary font-medium flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              {selectedTelefonePlan.name} · {telefoneLinhas} linha{telefoneLinhas > 1 ? "s" : ""} — {calcPriceDisplay(selectedTelefonePlan, telefoneLinhas)}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <NavRow onBack={() => setLocation("/")} onNext={() => go(1)}
+                    nextDisabled={!selectedInternetPlan} nextTestId="button-proximo-step0" />
+                </motion.div>
+              )}
+
+              {/* ── STEP 1: Dados pessoais ── */}
+              {step === 1 && (
+                <motion.div key="step1" custom={dir} variants={stepVariants} initial="enter" animate="center" exit="exit">
                   <SectionHeader
                     icon={<User className="w-5 h-5" />}
                     title="Seus Dados de Contato"
@@ -738,14 +708,14 @@ export default function ContractPage() {
                       )}
                     </div>
                   </div>
-                  <NavRow onBack={() => setLocation("/")} onNext={() => go(1)}
+                  <NavRow onBack={() => go(0)} onNext={() => go(2)}
                     nextDisabled={!step1Valid} nextTestId="button-proximo-step1" />
                 </motion.div>
               )}
 
-              {/* ── STEP 1: Endereço ── */}
-              {step === 1 && (
-                <motion.div key="step1" custom={dir} variants={stepVariants} initial="enter" animate="center" exit="exit">
+              {/* ── STEP 2: Endereço ── */}
+              {step === 2 && (
+                <motion.div key="step2" custom={dir} variants={stepVariants} initial="enter" animate="center" exit="exit">
                   <SectionHeader
                     icon={<MapPin className="w-5 h-5" />}
                     title="Endereço de Instalação"
@@ -845,14 +815,14 @@ export default function ContractPage() {
                       </div>
                     </div>
                   </div>
-                  <NavRow onBack={() => go(0)} onNext={() => go(2)}
+                  <NavRow onBack={() => go(1)} onNext={() => go(3)}
                     nextDisabled={!step2Valid} nextTestId="button-proximo-step2" />
                 </motion.div>
               )}
 
-              {/* ── STEP 2: Agendamento ── */}
-              {step === 2 && (
-                <motion.div key="step2" custom={dir} variants={stepVariants} initial="enter" animate="center" exit="exit">
+              {/* ── STEP 3: Agendamento ── */}
+              {step === 3 && (
+                <motion.div key="step3" custom={dir} variants={stepVariants} initial="enter" animate="center" exit="exit">
                   <SectionHeader
                     icon={<Calendar className="w-5 h-5" />}
                     title="Agendar Instalação"
@@ -911,14 +881,14 @@ export default function ContractPage() {
                       Nossa equipe confirmará a data pelo WhatsApp. Instalação sujeita à disponibilidade de agenda.
                     </p>
                   </div>
-                  <NavRow onBack={() => go(1)} onNext={() => go(3)}
+                  <NavRow onBack={() => go(2)} onNext={() => go(4)}
                     nextDisabled={!step3Valid} nextTestId="button-proximo-step3" />
                 </motion.div>
               )}
 
-              {/* ── STEP 3: Confirmar ── */}
-              {step === 3 && (
-                <motion.div key="step3" custom={dir} variants={stepVariants} initial="enter" animate="center" exit="exit">
+              {/* ── STEP 4: Confirmar ── */}
+              {step === 4 && (
+                <motion.div key="step4" custom={dir} variants={stepVariants} initial="enter" animate="center" exit="exit">
                   <SectionHeader
                     icon={<ClipboardList className="w-5 h-5" />}
                     title="Revise e Confirme"
@@ -1022,7 +992,7 @@ export default function ContractPage() {
 
                   <div className="px-6 md:px-8 pb-6 md:pb-8 flex justify-between items-center">
                     <button
-                      onClick={() => go(2)}
+                      onClick={() => go(3)}
                       className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                       data-testid="button-voltar-step4"
                     >
