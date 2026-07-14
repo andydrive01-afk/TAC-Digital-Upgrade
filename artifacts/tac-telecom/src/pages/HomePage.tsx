@@ -435,7 +435,12 @@ export default function HomePage() {
 
     fetch("/api/content/plans")
       .then(r => r.ok ? r.json() : [])
-      .then((data: Plan[]) => setPlans(data))
+      .then((data: Plan[]) => setPlans(data.map(p => ({
+        ...p,
+        features: Array.isArray(p.features) ? p.features : (typeof p.features === "string" ? JSON.parse(p.features as unknown as string) : []),
+        icons:    Array.isArray(p.icons)    ? p.icons    : (typeof p.icons    === "string" ? JSON.parse(p.icons    as unknown as string) : []),
+        bonusIds: Array.isArray(p.bonusIds) ? p.bonusIds : (typeof p.bonusIds === "string" ? JSON.parse(p.bonusIds as unknown as string) : []),
+      }))))
       .catch(() => {});
 
     fetch("/api/content/cities")
