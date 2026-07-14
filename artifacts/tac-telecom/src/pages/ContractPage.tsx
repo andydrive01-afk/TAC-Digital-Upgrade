@@ -614,7 +614,7 @@ export default function ContractPage() {
                   </div>
 
                   <NavRow onBack={() => setLocation("/")} onNext={() => go(1)}
-                    nextDisabled={!selectedInternetPlan} nextTestId="button-proximo-step0" />
+                    nextDisabled={!selectedInternetKey} nextTestId="button-proximo-step0" />
                 </motion.div>
               )}
 
